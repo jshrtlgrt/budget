@@ -1,0 +1,212 @@
+<?php
+// Example session check
+// session_start();
+// if (!isset($_SESSION['username'])) {
+//     header("Location: login.php");
+//     exit;
+// }
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Budget Request</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+    }
+
+    .top-bar {
+      background-color: #006837;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .top-bar label {
+      font-weight: bold;
+    }
+
+    .top-bar select, .top-bar input[type="text"] {
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    .upload-btn {
+      background-color: white;
+      color: #006837;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    .content {
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .accordion {
+      width: 60%;
+    }
+
+    .accordion-item {
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+
+    .accordion-header {
+      background-color: #f2f2f2;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .accordion-body {
+      display: none;
+      padding: 10px;
+    }
+
+    .summary {
+      width: 35%;
+      background-color: #ddd;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .summary h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .button-row {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .save {
+      background-color: #f0ad4e;
+    }
+
+    .submit {
+      background-color: #006837;
+    }
+
+    .submit:hover {
+      background-color: #004e29;
+    }
+
+    .save:hover {
+      background-color: #d0892f;
+    }
+  </style>
+</head>
+<body>
+
+  <form method="POST" action="save_request.php" enctype="multipart/form-data">
+    <div class="top-bar">
+      <label>Campus:
+        <select name="campus">
+          <option>Manila</option>
+          <option>Laguna</option>
+        </select>
+      </label>
+
+      <label>Department:
+        <select name="department">
+          <option>OAD (CCS)</option>
+          <option>IT Department</option>
+        </select>
+      </label>
+
+      <label>Fund Account:
+        <input type="text" name="fund_account" value="42039101" />
+      </label>
+
+      <label>Duration of Budget:
+        <select name="duration">
+          <option>Whole Year</option>
+          <option>Per Term</option>
+        </select>
+      </label>
+
+      <label>Import Excel:
+        <input type="file" name="excel_upload" class="upload-btn" />
+      </label>
+    </div>
+
+    <div class="content">
+      <div class="accordion">
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Salaries</div>
+          <div class="accordion-body">
+            <input type="text" name="salaries[]" placeholder="Salary Item 1: PHP 30,000" />
+            <input type="text" name="salaries[]" placeholder="Salary Item 2: PHP 30,000" />
+            <input type="text" name="salaries[]" placeholder="Salary Item 3: PHP 30,000" />
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Honoraria</div>
+          <div class="accordion-body">
+            <input type="text" name="honoraria[]" placeholder="Honoraria Item 1: PHP 30,000" />
+            <input type="text" name="honoraria[]" placeholder="Honoraria Item 2: PHP 30,000" />
+            <input type="text" name="honoraria[]" placeholder="Honoraria Item 3: PHP 30,000" />
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Transportation & Accommodation</div>
+          <div class="accordion-body">
+            <input type="text" name="transport[]" placeholder="T&A Item 1: PHP 50,000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="summary">
+        <h3>Budget Summary</h3>
+        <p><strong>Salaries:</strong> PHP 90,000.00</p>
+        <p><strong>Honoraria:</strong> PHP 90,000.00</p>
+        <p><strong>T & A:</strong> PHP 50,000.00</p>
+        <hr />
+        <p><strong>Grand Total:</strong> PHP 230,000.00</p>
+
+        <div class="button-row">
+          <button class="btn save" type="submit" name="action" value="draft">💾 Save Draft</button>
+          <button class="btn submit" type="submit" name="action" value="submit">✅ Submit</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    function toggleAccordion(header) {
+      const body = header.nextElementSibling;
+      body.style.display = body.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
+
+</body>
+</html>
