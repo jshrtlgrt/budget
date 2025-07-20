@@ -9,128 +9,170 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Requester Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
+    * {
+      box-sizing: border-box;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #fff;
+      background-color: #0b0f12;
     }
 
-    .header {
-      padding: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      margin-left: 30px;
+    .dashboard-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      padding: 30px;
+      background: white;
     }
 
-    .filter-bar {
+    .header-bar {
       display: flex;
       justify-content: space-between;
-      background-color: #006837;
-      color: white;
-      padding: 15px 30px;
       align-items: center;
-    }
-
-    .filters {
-      display: flex;
-      gap: 20px;
-    }
-
-    .filter-bar label {
-      font-weight: bold;
-    }
-
-    select {
-      padding: 5px;
-      border-radius: 5px;
-      border: none;
-    }
-
-    .create-button {
-      background-color: white;
-      color: #006837;
-      border: none;
-      padding: 8px 16px;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .create-button:hover {
-      background-color: #e5f6e5;
-    }
-
-    .budget-list {
-      padding: 20px 30px;
-    }
-
-    .budget-card {
-      background: #ccc;
-      border-radius: 10px;
-      padding: 15px 20px;
       margin-bottom: 20px;
     }
 
-    .budget-card h3 {
-      margin: 0 0 10px;
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
     }
 
-    .budget-card p {
-      margin: 5px 0;
+    .create-btn {
+    background-color: #015c2e;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 5px; 
+    text-decoration: none;
+    display: inline-block;
     }
 
-    .approved {
-      background-color: #d1e7d1;
+
+    .create-btn:hover {
+      background-color: #013f21;
     }
 
-    .pending {
-      background-color: #f2d3a3;
+    .filters {
+      background-color: #015c2e;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      border-radius: 5px;
+    }
+
+    .filters label {
+      color: white;
+      font-weight: bold;
+    }
+
+    .filters select {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 14px;
+    }
+
+    .content-box {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 20px;
+      margin-top: 20px;
+      overflow-y: auto;
+    }
+
+    .request-card {
+      background-color: #dcdcdc;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .request-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .request-detail {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .request-detail i {
+      font-style: normal;
+    }
+
+    .status-approved {
+      color: green;
+    }
+
+    .status-pending {
+      color: orange;
+    }
+
+    .status-rejected {
+      color: red;
     }
   </style>
 </head>
 <body>
 
-  <div class="header">Hello, Requester</div>
+  <div class="dashboard-container">
+    <div class="header-bar">
+      <h1>REQUESTER DASHBOARD</h1>
+      <a href="create.html" class="create-btn">+ Create</a>
 
-  <div class="filter-bar">
+    </div>
+
     <div class="filters">
-      <label>
-        Sort By:
-        <select>
-          <option>Latest First</option>
-          <option>Oldest First</option>
-        </select>
-      </label>
-      <label>
-        Status:
-        <select>
-          <option>All</option>
-          <option>Pending</option>
-          <option>Approved</option>
-        </select>
-      </label>
-    </div>
-    <button class="create-button" onclick="window.location.href='create.html'">+ Create</button>
-  </div>
+      <label for="sort">Sort By:</label>
+      <select id="sort">
+        <option>Latest first</option>
+        <option>Oldest</option>
+      </select>
 
-  <div class="budget-list">
-    <div class="budget-card pending">
-      <h3>Budget Request: BR2025-078</h3>
-      <p>📅 Submitted: May 23, 2025</p>
-      <p>🏫 Academic Year: 2024–2025</p>
-      <p>⏳ Status: Pending</p>
+      <label for="status">Status:</label>
+      <select id="status">
+        <option>Approved</option>
+        <option>Rejected</option>
+        <option>More Information</option>
+      </select>
     </div>
 
-    <div class="budget-card approved">
-      <h3>Budget Request: BR2024-075</h3>
-      <p>📅 Submitted: May 23, 2024</p>
-      <p>🏫 Academic Year: 2023–2024</p>
-      <p>✅ Status: Approved</p>
+    <div class="content-box">
+
+      <!-- Placeholder for dynamic cards -->
+      <div class="request-card">
+        <div class="request-title">BUDGET REQUEST: BR2025-078</div>
+        <div class="request-detail"><i>📅</i> Submitted: May 23, 2025</div>
+        <div class="request-detail"><i>📖</i> Academic Year: 2024 - 2025</div>
+        <div class="request-detail status-pending"><i>⏳</i> Status: Pending</div>
+      </div>
+
+      <div class="request-card">
+        <div class="request-title">BUDGET REQUEST: BR2025-075</div>
+        <div class="request-detail"><i>📅</i> Submitted: May 23, 2024</div>
+        <div class="request-detail"><i>📖</i> Academic Year: 2023 - 2024</div>
+        <div class="request-detail status-approved"><i>✅</i> Status: Approved</div>
+      </div>
+
     </div>
   </div>
 

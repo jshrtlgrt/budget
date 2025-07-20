@@ -10,203 +10,465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Create Budget Request</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <!-- Load Montserrat font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #fff;
-    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;height:100%;width:100%;font-family:'Montserrat',sans-serif;background:#f4f4f4}
+    .container{height:100%;width:100%;display:flex;flex-direction:column}
+    h1{text-align:center;font-size:28px;margin:20px 0;font-weight:600}
+    .form-section{background:#005c2e;color:white;padding:20px;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between}
+    .form-group{flex:1 1 30%;display:flex;flex-direction:column}
+    .form-group select,.form-group input[type="file"]{padding:8px;border-radius:4px;border:none;font-family:'Montserrat',sans-serif}
+    .form-center-container{display:flex;justify-content:center;align-items:flex-end;flex:1 1 100%;gap:20px;margin-top:10px}
+    .main-content{flex:1;display:flex;gap:20px;padding:20px;overflow:hidden}
+    .left-panel{flex:1;max-width:300px;display:flex;flex-direction:column}
+    .left-panel input[type="text"]{width:100%;padding:8px;margin-bottom:15px;border-radius:5px;border:1px solid #ccc;font-family:'Montserrat',sans-serif}
+    .category-list{border:1px solid #ccc;border-radius:5px;padding:10px;background-color:#f9f9f9;flex-grow:1;overflow-y:auto}
+    .category-list details{margin-bottom:10px}
+    .budget-summary{flex:3;background-color:#e8e8e8;padding:20px;border-radius:5px;overflow-y:auto}
+    .budget-summary h3{margin-top:0;font-size:18px;font-weight:bold}
+    .budget-summary .section{margin-bottom:15px}
+    .budget-summary .item{display:flex;justify-content:space-between;padding:2px 0}
+    .budget-summary .total{font-weight:bold;font-size:20px;text-align:right;border-top:2px solid #000;padding-top:10px}
+    .button-group{margin-top:20px;display:flex;justify-content:space-between}
+    .button-group button{flex:1;padding:12px;font-weight:bold;border:none;border-radius:5px;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:14px}
+    .save-draft{background-color:#E29C2C;color:white}
+    .submit{background-color:#007a33;color:white;margin-left:10px}
+    .custom-file-upload{display:flex;align-items:center;gap:8px}
+    .custom-file-upload input[type="text"]{flex:1;padding:10px;border-radius:4px;border:none;background-color:white;font-family:'Montserrat',sans-serif;appearance:none;-webkit-appearance:none;-moz-appearance:none}
+    .custom-file-upload .upload-btn{background-color:white;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-weight:400;color:black;border:2px solid #005c2e}
+    .budget-summary h3 {text-align: center;}
 
-    .top-bar {
-      background-color: #006837;
-      color: white;
-      padding: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: center;
-    }
+    </style>
 
-    .top-bar label {
-      font-weight: bold;
-    }
-
-    .top-bar select, .top-bar input[type="text"] {
-      padding: 5px;
-      border-radius: 5px;
-      border: none;
-    }
-
-    .upload-btn {
-      background-color: white;
-      color: #006837;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-    }
-
-    .content {
-      display: flex;
-      padding: 20px;
-      gap: 20px;
-    }
-
-    .accordion {
-      width: 60%;
-    }
-
-    .accordion-item {
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      border-radius: 5px;
-    }
-
-    .accordion-header {
-      background-color: #f2f2f2;
-      padding: 10px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .accordion-body {
-      display: none;
-      padding: 10px;
-    }
-
-    .summary {
-      width: 35%;
-      background-color: #ddd;
-      padding: 20px;
-      border-radius: 10px;
-    }
-
-    .summary h3 {
-      margin-top: 0;
-      text-align: center;
-    }
-
-    .button-row {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .save {
-      background-color: #f0ad4e;
-    }
-
-    .submit {
-      background-color: #006837;
-    }
-
-    .submit:hover {
-      background-color: #004e29;
-    }
-
-    .save:hover {
-      background-color: #d0892f;
-    }
-  </style>
 </head>
 <body>
 
-  <form method="POST" action="save_request.php" enctype="multipart/form-data">
-    <div class="top-bar">
-      <label>Campus:
-        <select name="campus">
-          <option>Manila</option>
-          <option>Laguna</option>
-        </select>
-      </label>
+<div class="container">
 
-      <label>Department:
-        <select name="department">
-          <option>OAD (CCS)</option>
-          <option>IT Department</option>
-        </select>
-      </label>
+<!-- Back Button -->
+<div style="position: absolute; top: 30px; left: 20px;">
+  <a href="requester_Dashboard.html" style="
+    background-color: #ffffff;
+    color: #005c2e;
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    border: 2px solid #005c2e;
+  ">
+    ← Back
+  </a>
+</div>
 
-      <label>Fund Account:
-        <input type="text" name="fund_account" value="42039101" />
-      </label>
+  <h1>CREATE BUDGET REQUEST</h1>
 
-      <label>Duration of Budget:
-        <select name="duration">
+  <div class="form-section">
+    <div class="form-group">
+      <label for="campus">Campus:</label>
+      <select id="campus">
+        <option>Manila</option>
+        <option>Makati</option>
+        <option>Mckinley Microcampus</option>
+        <option>Laguna</option>
+        <option>BGC</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="department">Department:</label>
+      <select id="department">
+        <option>OAD (CCS)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="fund-account">Fund Account:</label>
+      <select id="fund-account">
+        <option>Unrestricted</option>
+        <option>Unrestricted butt board designated</option>
+        <option>Restricted</option>
+        <option>Funds held in trust</option>
+      </select>
+    </div>
+
+    <!-- Centered duration and import -->
+    <div class="form-center-container">
+      <div class="form-group" style="flex: 0 0 250px;">
+        <label for="duration">Duration of Budget:</label>
+        <select id="duration">
           <option>Whole Year</option>
-          <option>Per Term</option>
+          <option>Quarterly</option>
+          <option>Half Year</option>
         </select>
-      </label>
-
-      <label>Import Excel:
-        <input type="file" name="excel_upload" class="upload-btn" />
-      </label>
-    </div>
-
-    <div class="content">
-      <div class="accordion">
-        <div class="accordion-item">
-          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Salaries</div>
-          <div class="accordion-body">
-            <input type="text" name="salaries[]" placeholder="Salary Item 1: PHP 30,000" />
-            <input type="text" name="salaries[]" placeholder="Salary Item 2: PHP 30,000" />
-            <input type="text" name="salaries[]" placeholder="Salary Item 3: PHP 30,000" />
-          </div>
-        </div>
-
-        <div class="accordion-item">
-          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Honoraria</div>
-          <div class="accordion-body">
-            <input type="text" name="honoraria[]" placeholder="Honoraria Item 1: PHP 30,000" />
-            <input type="text" name="honoraria[]" placeholder="Honoraria Item 2: PHP 30,000" />
-            <input type="text" name="honoraria[]" placeholder="Honoraria Item 3: PHP 30,000" />
-          </div>
-        </div>
-
-        <div class="accordion-item">
-          <div class="accordion-header" onclick="toggleAccordion(this)">▶ Transportation & Accommodation</div>
-          <div class="accordion-body">
-            <input type="text" name="transport[]" placeholder="T&A Item 1: PHP 50,000" />
-          </div>
-        </div>
       </div>
 
-      <div class="summary">
-        <h3>Budget Summary</h3>
-        <p><strong>Salaries:</strong> PHP 90,000.00</p>
-        <p><strong>Honoraria:</strong> PHP 90,000.00</p>
-        <p><strong>T & A:</strong> PHP 50,000.00</p>
-        <hr />
-        <p><strong>Grand Total:</strong> PHP 230,000.00</p>
-
-        <div class="button-row">
-          <button class="btn save" type="submit" name="action" value="draft">💾 Save Draft</button>
-          <button class="btn submit" type="submit" name="action" value="submit">✅ Submit</button>
+      <div class="form-group" style="flex: 0 0 250px;">
+        <label for="import-excel">Import Excel:</label>
+        <div class="custom-file-upload">
+            <input type="text" id="file-name-display" placeholder="Choose file..." readonly>
+            <label for="import-excel" class="upload-btn">Browse</label>
+            <input type="file" id="import-excel" style="display: none;">
         </div>
+        </div>
+
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="left-panel">
+      <input type="text" placeholder="Search">
+      <div class="category-list">
+        <details><summary>Salaries</summary></details>
+        <details><summary>Honoraria</summary></details>
+        <details><summary>Professional Fee</summary></details>
+        <details><summary>Transportation & Accommodation</summary></details>
+        <details><summary>Food & Meals</summary></details>
+        <details><summary>Repair & Maintenance</summary></details>
+      </div>
+
+      <div class="button-group">
+        <button class="save-draft">Save Draft</button>
+        <button class="submit">Submit</button>
       </div>
     </div>
-  </form>
 
-  <script>
-    function toggleAccordion(header) {
-      const body = header.nextElementSibling;
-      body.style.display = body.style.display === 'block' ? 'none' : 'block';
+    <div class="budget-summary">
+        <div style="margin-top: -20px; background-color: #e8e8e8; padding: 20px; border-radius: 5px;">
+        <div style="margin-bottom: 15px;">
+            <label for="budget-title" style="display: block; font-weight: 600; margin-bottom: 5px;">Budget Request Title:</label>
+            <input type="text" id="budget-title" placeholder="Enter budget request title..." 
+                style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Montserrat', sans-serif;">
+        </div>
+
+        <div>
+            <label for="description" style="display: block; font-weight: 600; margin-bottom: 5px;">Budget Description:</label>
+            <textarea id="description" rows="4" placeholder="Provide justification for the budget request..." 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Montserrat', sans-serif; resize: vertical;"></textarea>
+        </div>
+        </div>
+
+      <h3>BUDGET SUMMARY</h3>
+
+      <!-- Budget summary sections will be dynamically generated here -->
+
+
+      <div class="total">TOTAL: PHP 0.00</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  document.getElementById('import-excel').addEventListener('change', function () {
+    const fileInput = this;
+    const display = document.getElementById('file-name-display');
+    display.value = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+  });
+</script>
+
+<!-- Generic Modal Overlay -->
+<div id="category-modal-overlay" style="
+  display:none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 999;
+"></div>
+
+<!-- Generic Modal Container -->
+<div id="category-modal" style="
+  display:none;
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  width: 500px;
+  padding: 20px 24px 24px 24px;
+  box-shadow: 0 8px 16px rgb(0 0 0 / 0.1);
+  font-family: 'Montserrat', sans-serif;
+  z-index: 1000;
+  user-select:none;
+">
+
+  <h2 id="category-modal-title" style="text-align:center; font-weight:700; margin: 0 0 15px;"></h2>
+
+  <div id="category-rows-container"></div>
+
+  <hr style="border: none; border-bottom: 1px solid #ccc; margin: 12px 0 20px 0;" />
+
+  <button id="add-row-btn" style="
+    border:none;
+    background:none;
+    color:#999;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 24px;
+    text-align:left;
+  ">+ Add another row</button>
+
+    <div style="display: flex; justify-content: center; gap: 12px;">
+    <button id="save-category-btn" style="
+        background: #E29C2C;
+        border: none;
+        padding: 10px 0;
+        width: 120px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        color: #2e2e2e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-family: 'Montserrat', sans-serif;
+        box-shadow: 0 2px 6px rgb(255 255 255 / 0.7) inset;
+        user-select: none;
+    ">
+        Save
+    </button>
+
+    <button id="cancel-category-btn" style="
+        background: #a94442;
+        border: none;
+        padding: 10px 0;
+        width: 120px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        color: white;
+        font-family: 'Montserrat', sans-serif;
+        user-select: none;
+    ">
+        Cancel
+    </button>
+    </div>
+
+</div>
+
+<script>
+  const categoryList = document.querySelectorAll('.category-list details');
+  const modal = document.getElementById('category-modal');
+  const overlay = document.getElementById('category-modal-overlay');
+  const rowsContainer = document.getElementById('category-rows-container');
+  const addRowBtn = document.getElementById('add-row-btn');
+  const saveBtn = document.getElementById('save-category-btn');
+  const cancelBtn = document.getElementById('cancel-category-btn');
+  const modalTitle = document.getElementById('category-modal-title');
+
+  // Store inputs per category title
+  const savedCategoryValues = {};
+
+  let currentCategory = null;
+  let rowCount = 0;
+
+    function createRow(value = '') {
+    const rowDiv = document.createElement('div');
+    rowDiv.classList.add('category-row');
+    rowDiv.style.display = 'flex';
+    rowDiv.style.alignItems = 'center';
+    rowDiv.style.marginBottom = '12px';
+    rowDiv.style.gap = '10px';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.style.flex = '1';
+    labelSpan.style.fontWeight = '500';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.step = '0.01';
+    input.placeholder = 'PHP amount';
+    input.value = value;
+    input.style.flex = '2';
+    input.style.padding = '8px 12px';
+    input.style.borderRadius = '12px';
+    input.style.border = 'none';
+    input.style.backgroundColor = 'transparent';
+    input.style.color = '#2e2e2e';
+    input.style.fontWeight = '600';
+    input.style.fontFamily = 'Montserrat, sans-serif';
+    input.style.textAlign = 'center';
+    input.style.outline = '1px solid #000000'; 
+    input.style.transition = 'outline-color 0.2s';
+
+    // Optional: Highlight outline on focus
+    input.addEventListener('focus', () => {
+    input.style.outlineColor = '#E29C2C';
+    });
+    input.addEventListener('blur', () => {
+    input.style.outlineColor = '#e2b25c';
+    });
+
+    // remove spinner arrows across all browsers
+    input.style.MozAppearance = 'textfield';
+    input.style.webkitAppearance = 'none';
+    input.style.appearance = 'none';
+    input.addEventListener('wheel', e => e.preventDefault());
+
+
+
+    // DELETE BUTTON
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '✕';
+    deleteBtn.style.border = 'none';
+    deleteBtn.style.background = 'transparent';
+    deleteBtn.style.color = '#a94442';
+    deleteBtn.style.fontSize = '18px';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.style.padding = '4px 8px';
+
+    deleteBtn.addEventListener('click', () => {
+        rowDiv.remove();
+        updateRowLabels();
+    });
+
+    rowDiv.appendChild(labelSpan);
+    rowDiv.appendChild(input);
+    rowDiv.appendChild(deleteBtn);
+    rowsContainer.appendChild(rowDiv);
+
+    updateRowLabels();
     }
-  </script>
+
+    // Updates row labels after adding/removing
+    function updateRowLabels() {
+    const rowDivs = rowsContainer.querySelectorAll('.category-row');
+    rowDivs.forEach((row, index) => {
+        const label = row.querySelector('span');
+        label.textContent = `${currentCategory} ${index + 1}:`;
+    });
+    rowCount = rowDivs.length;
+    }
+
+
+  function openModal(categoryName) {
+    currentCategory = categoryName;
+    modalTitle.textContent = categoryName;
+    rowsContainer.innerHTML = '';
+    rowCount = 0;
+
+    const savedValues = savedCategoryValues[categoryName] || [];
+
+    if (savedValues.length === 0) {
+      createRow(`${categoryName} 1`);
+    } else {
+      savedValues.forEach((val, idx) => {
+        createRow(`${categoryName} ${idx + 1}`, val);
+      });
+    }
+
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    overlay.style.display = 'none';
+  }
+
+  // Attach click to all category summaries
+  categoryList.forEach((detail) => {
+    const summary = detail.querySelector('summary');
+    summary.addEventListener('click', e => {
+      e.preventDefault();
+      openModal(summary.textContent.trim());
+    });
+  });
+
+    addRowBtn.addEventListener('click', () => {
+    createRow();
+    });
+
+
+    saveBtn.addEventListener('click', () => {
+    const inputs = rowsContainer.querySelectorAll('input');
+    savedCategoryValues[currentCategory] = [];
+
+    // Find budget summary container
+    const budgetSummary = document.querySelector('.budget-summary');
+    if (!budgetSummary) return;
+
+    // Find existing section matching category (case-insensitive)
+    let categorySection = [...budgetSummary.querySelectorAll('.section')]
+        .find(section => section.querySelector('strong')?.textContent.toLowerCase() === currentCategory.toLowerCase());
+
+    // Create if not found
+    if (!categorySection) {
+        categorySection = document.createElement('div');
+        categorySection.className = 'section';
+        const strong = document.createElement('strong');
+        strong.textContent = currentCategory.toUpperCase();
+        categorySection.appendChild(strong);
+        // Insert before total div to keep total at bottom
+        const totalDiv = budgetSummary.querySelector('.total');
+        budgetSummary.insertBefore(categorySection, totalDiv);
+    }
+
+    // Clear previous items
+    categorySection.querySelectorAll('.item').forEach(item => item.remove());
+
+    inputs.forEach((input, i) => {
+        savedCategoryValues[currentCategory].push(input.value);
+
+        const val = parseFloat(input.value);
+        if (!isNaN(val) && val > 0) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.padding = '2px 0';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = `${currentCategory} ${i + 1}:`;
+
+        const amountSpan = document.createElement('span');
+        amountSpan.textContent = `PHP ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        div.appendChild(labelSpan);
+        div.appendChild(amountSpan);
+        categorySection.appendChild(div);
+        }
+    });
+
+    updateTotal();
+    closeModal();
+    });
+
+
+  cancelBtn.addEventListener('click', () => {
+    closeModal();
+  });
+
+  overlay.addEventListener('click', closeModal);
+
+  function updateTotal() {
+    const totalDiv = document.querySelector('.budget-summary .total');
+    if (!totalDiv) return;
+
+    let total = 0;
+
+    document.querySelectorAll('.budget-summary .section').forEach(section => {
+      section.querySelectorAll('.item span:last-child').forEach(amountSpan => {
+        const text = amountSpan.textContent.replace(/[^0-9.]/g, '');
+        const val = parseFloat(text);
+        if (!isNaN(val)) total += val;
+      });
+    });
+
+    totalDiv.textContent = 'TOTAL: PHP ' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  }
+</script>
+
+
 
 </body>
 </html>

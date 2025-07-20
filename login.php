@@ -14,90 +14,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login</title>
-  <style>
-    body {
-        font-family: Arial, sans-serif;
+  <meta charset="UTF-8">
+  <title>Login - Budget Request System</title>
+  <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
+
+        * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        background-color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
+        font-family: Arial, sans-serif;
         }
 
-        .login-box {
-        background-color: #006837;
-        width: 320px;
-        padding: 30px;
-        border-radius: 15px;
-        color: white;
+        body, html {
+        height: 100%;
+        width: 100%;
+        }
+
+        .login-container {
+        display: flex;
+        height: calc(100vh - 40px); /* Leave space for footer */
+        width: 100%;
+        }
+
+        .left-pane {
+        flex: 1;
+        position: relative;
+        background-color: #006633;
+        overflow: hidden;
+        }
+
+        .bg-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.4;
+        position: absolute;
+        top: 0;
+        left: 0;
+        }
+
+        .right-pane {
+        width: 35%;
+        background-color: #ffffff;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-
-        .logo-circle {
-        width: 120px;
-        height: 120px;
-        background: white;
-        border-radius: 50%;
-        display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 15px;
+        padding: 40px;
         }
 
-        .logo-circle img {
-        width: 80px;
-        height: auto;
+        .form-wrapper {
+        text-align: center;
+        width: 100%;
         }
 
-        .login-box h2 {
-        margin-bottom: 20px;
-        font-weight: normal;
+        .logo {
+        width: 200px;
+        margin-bottom: 150px;
         }
 
-        .login-box input {
-        width: 90%;
+
+        h2 {
+        margin-top: -100px;
+        margin-bottom: 50px;
+        }
+
+
+        form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        }
+
+        input {
         padding: 10px;
-        margin-bottom: 15px;
-        border: none;
         border-radius: 5px;
-        font-size: 14px;
+        border: 1px solid #999;
+        width: 80%;
+        display: block;
+        margin: 0 auto;
         }
 
-        .login-box button {
+
+        button {
         padding: 10px;
-        width: 90%;
-        background-color: #004f29;
         border: none;
+        background-color: #006633;
         color: white;
         border-radius: 5px;
-        font-weight: bold;
         cursor: pointer;
-        font-size: 16px;
+        width: 80%;
+        display: block;
+        margin: 0 auto;
         }
 
-        .login-box button:hover {
-        background-color: #003f22;
+
+        button:hover {
+        background-color: #004d26;
         }
-  </style>
+
+        footer.footer {
+        height: 40px;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        font-size: 12px;
+        font-weight: 300;
+        font-family: 'Montserrat', sans-serif;
+        border-top: 1px solid #ccc;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="login-box">
-    <div class="logo-circle">
-      <img src="img/dlsu-logo.png" alt="DLSU Logo">
+  <div class="login-container">
+    <div class="left-pane">
+      <img src="BRS_BG.png" alt="DLSU Building" class="bg-image">
     </div>
-    <h2>Login</h2>
-    <form action="login.php" method="POST">
-      <input type="email" name="email" placeholder="Email" required />
-      <input type="password" name="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+    <div class="right-pane">
+      <div class="form-wrapper">
+        <img src="DLSU_Logo.png" alt="DLSU Logo" class="logo">
+        <h2>Login</h2>
+        <form action="requester.php" method="GET">
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Password" required>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </div>
   </div>
+
+  <footer class="footer">
+    <div class="footer-left">BUDGET REQUEST SYSTEM</div>
+    <div class="footer-right">DE LA SALLE UNIVERSITY - MANILA</div>
+  </footer>
 </body>
 </html>
