@@ -4,6 +4,21 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
     header("Location: login.php");
     exit;
 }
+
+$pdo = new PDO("mysql:host=localhost;dbname=budget_database_schema", "root", "");
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$username = $_SESSION['username'];
+$stmt = $pdo->prepare("SELECT id FROM account WHERE username_email = ?");
+$stmt->execute([$username]);
+$account_id = $stmt->fetchColumn();
+
+$requests = [];
+if ($account_id) {
+    $stmt = $pdo->prepare("SELECT * FROM budget_request WHERE account_id = ? ORDER BY timestamp DESC");
+    $stmt->execute([$account_id]);
+    $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -47,18 +62,17 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
     }
 
     .create-btn {
-    background-color: #015c2e;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 5px; 
-    text-decoration: none;
-    display: inline-block;
+      background-color: #015c2e;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 5px; 
+      text-decoration: none;
+      display: inline-block;
     }
-
 
     .create-btn:hover {
       background-color: #013f21;
@@ -100,6 +114,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
       padding: 20px;
       border-radius: 5px;
       margin-bottom: 15px;
+      cursor: pointer;
     }
 
     .request-title {
@@ -119,62 +134,111 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
       font-style: normal;
     }
 
-    .status-approved {
-      color: green;
+    .status-approved { color: green; }
+    .status-pending { color: orange; }
+    .status-rejected { color: red; }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
     }
 
-    .status-pending {
-      color: orange;
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      width: 80%;
+      max-height: 70%;
+      overflow-y: auto;
+      border-radius: 10px;
+      position: relative;
     }
 
-    .status-rejected {
-      color: red;
+    .close-btn {
+      position: absolute;
+      top: 10px; right: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .entry-row {
+      border-bottom: 1px solid #ccc;
+      padding: 6px 0;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
-  <div class="dashboard-container">
-    <div class="header-bar">
-      <h1>REQUESTER DASHBOARD</h1>
-      <a href="create.html" class="create-btn">+ Create</a>
-
-    </div>
-
-    <div class="filters">
-      <label for="sort">Sort By:</label>
-      <select id="sort">
-        <option>Latest first</option>
-        <option>Oldest</option>
-      </select>
-
-      <label for="status">Status:</label>
-      <select id="status">
-        <option>Approved</option>
-        <option>Rejected</option>
-        <option>More Information</option>
-      </select>
-    </div>
-
-    <div class="content-box">
-
-      <!-- Placeholder for dynamic cards -->
-      <div class="request-card">
-        <div class="request-title">BUDGET REQUEST: BR2025-078</div>
-        <div class="request-detail"><i>📅</i> Submitted: May 23, 2025</div>
-        <div class="request-detail"><i>📖</i> Academic Year: 2024 - 2025</div>
-        <div class="request-detail status-pending"><i>⏳</i> Status: Pending</div>
-      </div>
-
-      <div class="request-card">
-        <div class="request-title">BUDGET REQUEST: BR2025-075</div>
-        <div class="request-detail"><i>📅</i> Submitted: May 23, 2024</div>
-        <div class="request-detail"><i>📖</i> Academic Year: 2023 - 2024</div>
-        <div class="request-detail status-approved"><i>✅</i> Status: Approved</div>
-      </div>
-
-    </div>
+<div class="dashboard-container">
+  <div class="header-bar">
+    <h1>REQUESTER DASHBOARD</h1>
+    <a href="create_request.php" class="create-btn">+ Create</a>
   </div>
+
+  <div class="filters">
+    <label for="sort">Sort By:</label>
+    <select id="sort">
+      <option>Latest first</option>
+      <option>Oldest</option>
+    </select>
+
+    <label for="status">Status:</label>
+    <select id="status">
+      <option>Submitted</option>
+      <option>Approved</option>
+      <option>Rejected</option>
+      <option>More Information</option>
+    </select>
+  </div>
+
+  <div class="content-box">
+    <?php foreach ($requests as $req): ?>
+      <div class="request-card" onclick="showModal('<?php echo $req['request_id']; ?>')">
+        <div class="request-title">BUDGET REQUEST: <?php echo $req['request_id']; ?></div>
+        <div class="request-detail"><i>📅</i> Submitted: <?php echo date("F j, Y", strtotime($req['timestamp'])); ?></div>
+        <div class="request-detail"><i>📖</i> Academic Year: <?php echo $req['academic_year']; ?></div>
+        <div class="request-detail status-<?php echo strtolower($req['status']); ?>">
+          <i>⏳</i> Status: <?php echo $req['status']; ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="detailsModal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="document.getElementById('detailsModal').style.display='none'">&times;</span>
+    <h2>Request Details</h2>
+    <div id="modalBody">Loading...</div>
+  </div>
+</div>
+
+<script>
+  function showModal(requestId) {
+    const modal = document.getElementById("detailsModal");
+    const modalBody = document.getElementById("modalBody");
+    modalBody.innerHTML = "Loading...";
+
+    fetch(`fetch_request_details.php?request_id=${requestId}`)
+      .then(res => res.text())
+      .then(data => {
+        modalBody.innerHTML = data;
+        modal.style.display = "block";
+      })
+      .catch(err => {
+        modalBody.innerHTML = "Failed to load details.";
+      });
+  }
+</script>
 
 </body>
 </html>
