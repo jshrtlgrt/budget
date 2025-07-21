@@ -57,10 +57,6 @@ if (!isset($_SESSION['username'])) {
       border: 1px solid #ccc;
       font-size: 14px;
     }
-    .form-center-container {
-      display: flex;
-      gap: 20px;
-    }
     .main-content {
       display: flex;
       justify-content: space-between;
@@ -82,6 +78,7 @@ if (!isset($_SESSION['username'])) {
       margin-bottom: 5px;
       padding: 8px;
       font-weight: 600;
+      cursor: pointer;
     }
     .button-group {
       display: flex;
@@ -121,11 +118,6 @@ if (!isset($_SESSION['username'])) {
     .budget-summary .summary-section {
       margin-bottom: 20px;
     }
-    .budget-summary .total {
-      text-align: right;
-      font-size: 24px;
-      font-weight: bold;
-    }
     .budget-summary input,
     .budget-summary textarea {
       width: 100%;
@@ -135,145 +127,374 @@ if (!isset($_SESSION['username'])) {
       border-radius: 8px;
       border: 1px solid #ccc;
     }
+    .budget-summary .total {
+      text-align: right;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .remark-text {
+      display: block;
+      margin-left: 90px;
+      font-style: italic;
+      color: #555;
+      font-size: 14px;
+    }
+
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 600px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+   
+    .modal-header {
+      padding: 16px 20px;
+      background: #006633;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .modal-header button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    
+    .modal-body {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .modal-body .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .modal-body .row label {
+      flex: 0 0 90px;
+      font-weight: 600;
+    }
+    .modal-body .row input.amount {
+      width: 100px;
+      padding: 8px 10px;
+      font-size: 16px;
+      background: #ffe8a1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modal-body .row input.remark {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #f0fff4;
+      border: 1px solid #00994d;
+      border-radius: 4px;
+    }
+
+   
+    #add-row {
+      margin-top: 12px;
+      font-size: 15px;
+      background: none;
+      border: none;
+      color: #006633;
+      cursor: pointer;
+    }
+
+    
+    .modal-footer {
+      padding: 16px 20px;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .modal-footer button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    #modal-save {
+      background: #00994d;
+      color: #fff;
+    }
+    #modal-cancel {
+      background: #c0392b;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
-<form method="POST" action="submit_request.php" onsubmit="prepareEntryData()" enctype="multipart/form-data">
-  <div class="container">
-    <div style="margin-bottom: 20px;">
-      <a href="requester.php" style="color:#006633;font-weight:bold;text-decoration:none;">← Back to Dashboard</a>
+  <form method="POST" action="submit_request.php" onsubmit="prepareEntryData()" enctype="multipart/form-data">
+    <div class="container">
+      <div style="margin-bottom: 20px;">
+        <a href="requester.php" style="color:#006633;font-weight:bold;text-decoration:none;">← Back to Dashboard</a>
+      </div>
+
+      <h1>CREATE BUDGET REQUEST</h1>
+
+      <div class="form-section">
+        <div class="form-group">
+          <label for="campus">Campus</label>
+          <select name="campus" id="campus">
+            <option>Manila</option>
+            <option>Makati</option>
+            <option>McKinley Microcampus</option>
+            <option>Laguna</option>
+            <option>BGC</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="department">Department</label>
+          <select name="department" id="department">
+            <option>OAD (CCS)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="fund_account">Fund Account</label>
+          <input name="fund_account" id="fund_account" value="42039101" />
+        </div>
+
+        <div class="form-group">
+          <label for="duration">Duration of Budget</label>
+          <select name="duration" id="duration">
+            <option>Whole Year</option>
+            <option>Quarterly</option>
+            <option>Half Year</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="import-excel">Import Excel</label>
+          <input type="file" name="import_excel" id="import-excel" />
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="left-panel">
+          <input type="text" placeholder="Search" />
+          <div class="category-list">
+            <details><summary>SALARIES</summary></details>
+            <details><summary>HONORARIA</summary></details>
+            <details><summary>PROFESSIONAL FEE</summary></details>
+            <details><summary>TRANSPO AND ACCOMMODATION</summary></details>
+            <details><summary>FOOD AND MEALS</summary></details>
+            <details><summary>REPAIR AND MAINTENANCE</summary></details>
+          </div>
+
+          <div class="button-group">
+            <button type="button" class="save-draft">Save Draft</button>
+            <button type="submit" class="submit">Review and Submit</button>
+          </div>
+        </div>
+
+        <div class="budget-summary">
+          <div class="summary-section">
+            <label for="budget-title">Budget Request Title</label>
+            <input type="text" name="budget_title" id="budget-title" placeholder="e.g. 2025 Q1 Request for OAD" />
+          </div>
+          <div class="summary-section">
+            <label for="description">Description</label>
+            <textarea name="description" id="description" rows="4" placeholder="Brief description of the request..."></textarea>
+          </div>
+
+          <h3>Budget Summary</h3>
+          <div id="budget-breakdown"></div>
+          <div class="total" id="total-amount">GRAND TOTAL: PHP 0.00</div>
+        </div>
+      </div>
+
+      <input type="hidden" name="budget_entries" id="budget_entries_json">
     </div>
+  </form>
 
-    <h1>CREATE BUDGET REQUEST</h1>
-
-    <div class="form-section">
-      <div class="form-group">
-        <label for="campus">Campus</label>
-        <select name="campus" id="campus">
-          <option>Manila</option>
-          <option>Makati</option>
-          <option>Mckinley Microcampus</option>
-          <option>Laguna</option>
-          <option>BGC</option>
-        </select>
+  
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Category</h2>
+        <button id="modal-close">&times;</button>
       </div>
-
-      <div class="form-group">
-        <label for="department">Department</label>
-        <select name="department" id="department">
-          <option>OAD (CCS)</option>
-        </select>
+      <div class="modal-body">
+        <div id="modal-rows"></div>
+        <button type="button" id="add-row">+ Add another row</button>
       </div>
-
-      <div class="form-group">
-        <label for="fund_account">Fund Account</label>
-        <input name="fund_account" id="fund_account" value="42039101" />
-      </div>
-
-      <div class="form-group">
-        <label for="duration">Duration of Budget</label>
-        <select name="duration" id="duration">
-          <option>Whole Year</option>
-          <option>Quarterly</option>
-          <option>Half Year</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="import-excel">Import Excel</label>
-        <input type="file" name="import_excel" id="import-excel" />
+      <div class="modal-footer">
+        <button type="button" id="modal-cancel">Cancel</button>
+        <button type="button" id="modal-save">Save</button>
       </div>
     </div>
-
-    <div class="main-content">
-      <div class="left-panel">
-        <input type="text" placeholder="Search" />
-        <div class="category-list">
-          <details><summary>SALARIES</summary></details>
-          <details><summary>HONORARIA</summary></details>
-          <details><summary>PROFESSIONAL FEE</summary></details>
-          <details><summary>TRANSPO AND ACCOMMODATION</summary></details>
-          <details><summary>FOOD AND MEALS</summary></details>
-          <details><summary>REPAIR AND MAINTENANCE</summary></details>
-        </div>
-
-        <div class="button-group">
-          <button type="button" class="save-draft">Save Draft</button>
-          <button type="submit" class="submit">Review and Submit</button>
-        </div>
-      </div>
-
-      <div class="budget-summary">
-        <div class="summary-section">
-          <label for="budget-title">Budget Request Title</label>
-          <input type="text" name="budget_title" id="budget-title" placeholder="e.g. 2025 Q1 Request for OAD" />
-        </div>
-        <div class="summary-section">
-          <label for="description">Description</label>
-          <textarea name="description" id="description" rows="4" placeholder="Brief description of the request..."></textarea>
-        </div>
-
-        <h3>Budget Summary</h3>
-        <div id="budget-breakdown">
-          <!-- Will be filled by JS -->
-        </div>
-        <div class="total" id="total-amount">GRAND TOTAL: PHP 0.00</div>
-      </div>
-    </div>
-
-    <input type="hidden" name="budget_entries" id="budget_entries_json">
   </div>
-</form>
 
-<script>
-  const savedCategoryValues = {
-    "SALARIES": [30000, 30000, 30000],
-    "HONORARIA": [30000, 30000, 30000],
-    "T & A": [50000]
-  };
+  <script>
+    
+    const savedCategoryEntries = {
+      "SALARIES": [
+        { amount: 30000, remark: "" },
+        { amount: 30000, remark: "" },
+        { amount: 30000, remark: "" }
+      ],
+      "HONORARIA": [
+        { amount: 30000, remark: "" },
+        { amount: 30000, remark: "" },
+        { amount: 30000, remark: "" }
+      ],
+      "T & A": [
+        { amount: 50000, remark: "" }
+      ],
+      "PROFESSIONAL FEE": [],
+      "FOOD AND MEALS": [],
+      "REPAIR AND MAINTENANCE": []
+    };
 
-  function formatAmount(num) {
-    return new Intl.NumberFormat('en-PH').format(num);
-  }
+    function formatAmount(num) {
+      return new Intl.NumberFormat('en-PH').format(num);
+    }
 
-  function updateSummaryUI() {
-    const breakdown = document.getElementById("budget-breakdown");
-    const totalElem = document.getElementById("total-amount");
-    breakdown.innerHTML = '';
-    let total = 0;
+    function updateSummaryUI() {
+      const breakdown = document.getElementById("budget-breakdown");
+      const totalElem = document.getElementById("total-amount");
+      breakdown.innerHTML = '';
+      let total = 0;
 
-    Object.entries(savedCategoryValues).forEach(([category, values]) => {
-      const section = document.createElement("div");
-      section.innerHTML = `<strong>${category}:</strong><br>`;
-      values.forEach((val, i) => {
-        section.innerHTML += `${category} ${i + 1} &nbsp;&nbsp;&nbsp;&nbsp; ${formatAmount(val)}<br>`;
-        total += val;
+      Object.entries(savedCategoryEntries).forEach(([category, entries]) => {
+        if (!entries.length) return;
+        const section = document.createElement("div");
+        section.innerHTML = `<strong>${category}:</strong><br>`;
+        entries.forEach((e, i) => {
+          section.innerHTML +=
+            `${category} ${i+1} &nbsp;&nbsp;&nbsp;&nbsp; ${formatAmount(e.amount)}<br>`;
+          if (e.remark) {
+            section.innerHTML +=
+              `<span class="remark-text">Remarks: ${e.remark}</span>`;
+          }
+          total += e.amount;
+        });
+        section.style.marginBottom = "10px";
+        breakdown.appendChild(section);
       });
-      section.style.marginBottom = "10px";
-      breakdown.appendChild(section);
+
+      totalElem.textContent = "GRAND TOTAL: PHP " + formatAmount(total);
+    }
+
+    function prepareEntryData() {
+      const structured = [];
+      Object.entries(savedCategoryEntries).forEach(([category, entries]) => {
+        entries.forEach((e, idx) => {
+          if (e.amount > 0) {
+            structured.push({
+              category: category,
+              label: `${category} ${idx+1}`,
+              amount: e.amount,
+              remark: e.remark
+            });
+          }
+        });
+      });
+      document.getElementById('budget_entries_json').value = JSON.stringify(structured);
+    }
+
+    updateSummaryUI();
+
+    
+    const overlay     = document.getElementById('modal-overlay');
+    const titleEl     = document.getElementById('modal-title');
+    const rowsContainer = document.getElementById('modal-rows');
+    const btnAdd      = document.getElementById('add-row');
+    const btnSave     = document.getElementById('modal-save');
+    const btnCancel   = document.getElementById('modal-cancel');
+    const btnClose    = document.getElementById('modal-close');
+
+    let currentCategory = null;
+
+    function openModal(category) {
+      currentCategory = category;
+      titleEl.textContent = category;
+      rowsContainer.innerHTML = '';
+      const existing = savedCategoryEntries[category] || [];
+      if (existing.length) {
+        existing.forEach(e => addRow(e.amount, e.remark));
+      } else {
+        addRow('', '');
+      }
+      overlay.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      overlay.classList.add('hidden');
+      rowsContainer.innerHTML = '';
+      currentCategory = null;
+    }
+
+    function addRow(amount='', remark='') {
+      const idx = rowsContainer.children.length + 1;
+      const div = document.createElement('div');
+      div.classList.add('row');
+      div.innerHTML = `
+        <label>${currentCategory} ${idx}:</label>
+        <input class="amount" type="number" step="0.01" value="${amount}" />
+        <input class="remark" type="text" placeholder="Remarks" value="${remark}" />
+      `;
+      rowsContainer.appendChild(div);
+    }
+
+    document.querySelectorAll('.category-list details summary').forEach(s => {
+      s.addEventListener('click', e => {
+        e.preventDefault();
+        openModal(s.textContent.trim());
+      });
     });
 
-    totalElem.textContent = "GRAND TOTAL: PHP " + formatAmount(total);
-  }
-
-  function prepareEntryData() {
-    const structured = [];
-    Object.entries(savedCategoryValues).forEach(([category, values]) => {
-      values.forEach((amount, idx) => {
-        const parsed = parseFloat(amount);
-        if (!isNaN(parsed) && parsed > 0) {
-          structured.push({
-            category: category,
-            label: `${category} ${idx + 1}`,
-            amount: parsed
-          });
-        }
-      });
+    btnAdd.addEventListener('click', () => addRow());
+    btnSave.addEventListener('click', () => {
+      const rows = rowsContainer.querySelectorAll('.row');
+      const newEntries = Array.from(rows).map(r => {
+        const amt = parseFloat(r.querySelector('input.amount').value) || 0;
+        const rem = r.querySelector('input.remark').value.trim();
+        return { amount: amt, remark: rem };
+      }).filter(e => e.amount > 0);
+      savedCategoryEntries[currentCategory] = newEntries;
+      updateSummaryUI();
+      closeModal();
     });
-    document.getElementById('budget_entries_json').value = JSON.stringify(structured);
-  }
-
-  updateSummaryUI();
-</script>
+    btnCancel.addEventListener('click', closeModal);
+    btnClose.addEventListener('click', closeModal);
+  </script>
 </body>
 </html>
