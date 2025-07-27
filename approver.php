@@ -20,14 +20,12 @@ require 'db.php';
       padding: 0;
       background-color: #f4f4f4;
     }
-
     header {
       background-color: #015c2e;
       color: #ffffff;
       padding: 1rem;
       text-align: center;
     }
-
     .dashboard {
       max-width: 1200px;
       margin: 20px auto;
@@ -35,13 +33,11 @@ require 'db.php';
       background: #ffffff;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
-
     .budget-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
     }
-
     .budget-card {
       background: #eafaf0;
       padding: 20px;
@@ -50,20 +46,16 @@ require 'db.php';
       cursor: pointer;
       transition: transform 0.2s;
     }
-
     .budget-card:hover {
       transform: scale(1.02);
       background-color: #dcf5e6;
     }
-
     .budget-card h3 {
       margin-top: 0;
     }
-
     .approved {
       border-left-color: green;
     }
-
     .modal {
       display: none;
       position: fixed;
@@ -75,7 +67,6 @@ require 'db.php';
       justify-content: center;
       align-items: center;
     }
-
     .modal-content {
       background: white;
       padding: 30px;
@@ -83,11 +74,9 @@ require 'db.php';
       width: 500px;
       max-width: 90%;
     }
-
     .modal-content h2 {
       margin-top: 0;
     }
-
     .close {
       float: right;
       cursor: pointer;
@@ -109,8 +98,9 @@ require 'db.php';
       if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
           $statusClass = strtolower($row['status']) === 'approved' ? 'approved' : '';
-          echo '<div class="budget-card ' . $statusClass . '" onclick="openModal()">';
-          echo '<h3>Budget Request: ' . htmlspecialchars($row['request_id']) . '</h3>';
+          $requestId = htmlspecialchars($row['request_id']);
+          echo '<div class="budget-card ' . $statusClass . '" onclick="openModal(\'' . $requestId . '\')">';
+          echo '<h3>Budget Request: ' . $requestId . '</h3>';
           echo '<p>📅 Submitted: ' . date("F d, Y", strtotime($row['timestamp'])) . '</p>';
           echo '<p>🏫 Academic Year: ' . htmlspecialchars($row['academic_year']) . '</p>';
           echo '<p>⏳ Status: ' . htmlspecialchars($row['status']) . '</p>';
@@ -123,31 +113,48 @@ require 'db.php';
     </div>
   </div>
 
-  <div class="modal" id="detailsModal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <h2>Request Details</h2>
-      <p><strong>Department:</strong> Example Department</p>
-      <p><strong>Amount:</strong> PHP 500,000</p>
-      <p><strong>Description:</strong> Purchase of new equipment</p>
-    </div>
+ <div class="modal" id="detailsModal">
+    <div id="modalBody">Loading...</div>
   </div>
+</div>
 
   <script>
-    function openModal() {
-      document.getElementById("detailsModal").style.display = "flex";
-    }
+ function openModal(requestId) {
+  const modal = document.getElementById("detailsModal");
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = "Loading...";
 
-    function closeModal() {
-      document.getElementById("detailsModal").style.display = "none";
-    }
+  fetch(`fetch_approval_details.php?request_id=${requestId}`)
+    .then(res => res.text())
+    .then(data => {
+      modalBody.innerHTML = data;
+      modal.style.display = "flex";
+    })
+    .catch(err => {
+      modalBody.innerHTML = "Failed to load request details.";
+      console.error(err);
+    });
+}
 
-    window.onclick = function(event) {
-      let modal = document.getElementById("detailsModal");
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    };
-  </script>
+
+ function closeModal() {
+  const modal = document.getElementById("detailsModal");
+  modal.style.display = "none";
+
+  // Clear everything inside the modal body
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = "";
+}
+
+
+
+  window.onclick = function(event) {
+    let modal = document.getElementById("detailsModal");
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  };
+</script>
+
 </body>
 </html>
