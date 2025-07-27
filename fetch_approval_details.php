@@ -1,239 +1,217 @@
 <?php
+session_start();
+
+// Allow multiple approver roles
+$allowed_roles = ['approver', 'department_head', 'dean', 'vp_finance'];
+if (!isset($_SESSION['username']) || !in_array($_SESSION['role'], $allowed_roles)) {
+    exit("Unauthorized access.");
+}
+
+if (!isset($_GET['request_id'])) {
+    exit("Invalid request.");
+}
+
 $pdo = new PDO("mysql:host=localhost;dbname=budget_database_schema", "root", "");
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$request_id = $_GET['request_id'] ?? '';
-if (!$request_id) exit("Invalid request.");
+$request_id = $_GET['request_id'];
 
-// Get budget request info
-$stmt = $pdo->prepare("SELECT * FROM budget_request WHERE request_id = ?");
+// Get request details with requester and department info
+$stmt = $pdo->prepare("
+    SELECT br.*, a.name as requester_name, a.username_email as requester_email, 
+           d.college, d.budget_deck 
+    FROM budget_request br 
+    LEFT JOIN account a ON br.account_id = a.id 
+    LEFT JOIN department d ON br.department_code = d.code 
+    WHERE br.request_id = ?
+");
 $stmt->execute([$request_id]);
 $request = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$request) exit("No request found.");
 
-// Get requester info
-$stmt = $pdo->prepare("SELECT name, username_email, department_code FROM account WHERE id = ?");
-$stmt->execute([$request['account_id']]);
-$requester = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// Get department and college
-$stmt = $pdo->prepare("SELECT college FROM department WHERE code = ?");
-$stmt->execute([$requester['department_code']]);
-$department = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$request) {
+    exit("Request not found.");
+}
 
 // Get budget entries
-$stmt = $pdo->prepare("SELECT * FROM budget_entries WHERE request_id = ?");
+$stmt = $pdo->prepare("SELECT * FROM budget_entries WHERE request_id = ? ORDER BY row_num");
 $stmt->execute([$request_id]);
 $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-echo <<<HTML
-<style>
-    body { font-family: Arial, sans-serif; margin: 0; }
+// Get approval workflow history
+require_once 'workflow_manager.php';
+$workflow = new WorkflowManager($pdo);
+$approval_history = $workflow->getApprovalHistory($request_id);
 
-    .modal-overlay {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        overflow-y: auto;
-    }
-
-    .modal-content {
-        position: relative;
-        background: white;
-        border-radius: 10px;
-        padding: 30px;
-        width: 75vw;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        margin: 40px 0;
-    }
-
-    .modal-close {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 24px;
-        font-weight: bold;
-        color: #666;
-        cursor: pointer;
-    }
-
-    h2 {
-        background: #02733e;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px 8px 0 0;
-        margin: -30px -30px 20px -30px;
-    }
-
-    .section-title {
-        font-weight: bold;
-        color: #333;
-        margin: 30px 0 10px;
-        border-bottom: 2px solid #ccc;
-        padding-bottom: 5px;
-    }
-
-    .info-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
-
-    .info-table td {
-        padding: 4px 8px; /* reduced horizontal space */
-        vertical-align: top;
-        text-align: left;
-    }
-
-    .info-table td:first-child {
-        white-space: nowrap;
-        width: 1px;
-    }
-
-    .total-budget-row td {
-        font-size: 1.3em;
-        font-weight: bold;
-        color: #02733e;
-        text-align: right;
-    }
-
-    .line-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-
-    .line-table th, .line-table td {
-        border: 1px solid #ccc;
-        padding: 10px;
-        text-align: left;
-    }
-
-    .line-table th {
-        background: #f0f0f0;
-    }
-
-    .btn-group button {
-        margin: 5px 10px 0 0;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    .btn-approve { background: #02733e; color: white; }
-    .btn-reject { background: #c62828; color: white; }
-    .btn-revision { background: #c5a100; color: white; }
-
-    .history-entry {
-        margin-bottom: 20px;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-    }
-
-    .history-date {
-        color: #02733e;
-        font-weight: bold;
-        font-size: 15px;
-    }
-
-    .history-comment {
-        margin-left: 20px;
-        color: #555;
-        font-size: 14px;
-    }
-
-    .history-comment p {
-        margin: 3px 0;
-    }
-</style>
-
-<div class='modal-content'>
-    <div class="modal-close" onclick="document.querySelector('.modal-overlay').style.display='none'">&times;</div>
-    <div class="modal-close" onclick="closeModal()">&times;</div>
-
-    <h2>Budget Request: {$request['request_id']}</h2>
-
-    <div class='section-title'>Basic Information</div>
-    <table class='info-table'>
-        <tr><td><strong>Submitted By:</strong></td><td>{$requester['name']} ({$requester['username_email']})</td></tr>
-        <tr><td><strong>Department:</strong></td><td>{$requester['department_code']}</td></tr>
-        <tr><td><strong>College:</strong></td><td>{$department['college']}</td></tr>
-        <tr><td><strong>Academic Year:</strong></td><td>{$request['academic_year']}</td></tr>
-        <tr><td><strong>Submission Date:</strong></td><td>{$request['timestamp']}</td></tr>
-        <tr><td><strong>Request Title:</strong></td><td><em>Not yet in DB</em></td></tr>
-        <tr><td><strong>Justification:</strong></td><td><em>Not yet in DB</em></td></tr>
-        <tr><td><strong>Attached Budget Deck:</strong></td><td><em>Not yet in DB</em></td></tr>
-HTML;
-
-echo "<tr class='total-budget-row'><td colspan='2'>Total Proposed Budget: ₱" . number_format($request['proposed_budget'], 2) . "</td></tr>";
-
-echo "</table>";
-echo <<<HTML
-    <div class='section-title'>Line Item Details</div>
-    <table class="line-table">
-        <thead>
-            <tr>
-                <th>Row</th>
-                <th>GL Code</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Fund Account</th>
-                <th>Fund Name</th>
-            </tr>
-        </thead>
-        <tbody>
-HTML;
-
-foreach ($entries as $entry) {
-    echo "<tr>
-        <td>{$entry['row_num']}</td>
-        <td>{$entry['gl_code']}</td>
-        <td>{$entry['budget_description']}</td>
-        <td>₱" . number_format($entry['amount'], 2) . "</td>
-        <td>{$entry['fund_account']}</td>
-        <td>{$entry['fund_name']}</td>
-    </tr>";
-}
-
-echo <<<HTML
-        </tbody>
-    </table>
-
-    <div class='section-title'>Approval Actions</div>
-    <textarea style="width: 100%; height: 100px;" placeholder="Enter your comments here..."></textarea><br/>
-    <div class='btn-group'>
-        <button class='btn-approve'>Approve</button>
-        <button class='btn-reject'>Reject</button>
-        <button class='btn-revision'>Request Revision</button>
-    </div>
-
-    <div class='section-title'>History & Comments Trail</div>
-
-    <div class='history-entry'>
-        <p><span class='history-date'>May 23, 2025, 10:05 AM:</span> Submitted by Juan Dela Cruz.</p>
-    </div>
-
-    <div class='history-entry'>
-        <p><span class='history-date'>May 23, 2025, 02:30 PM:</span> Viewed by Maria Garcia (Budget Unit Staff).</p>
-        <div class='history-comment'>
-            <p><strong><em>Action:</em></strong> Approved by Budget Unit Staff.</p>
-            <p><strong><em>Comments:</em></strong> Initial review complete. All documents seem to be in order. Forwarding to Head.</p>
-        </div>
-    </div>
-
-    <div class='history-entry'>
-        <p><span class='history-date'>May 23, 2025, 03:50 PM:</span> Viewed by Jirk Miranda.</p>
-    </div>
-
-</div>
-</div>
-HTML;
+// Get general history
+$stmt = $pdo->prepare("
+    SELECT h.*, a.name as approver_name 
+    FROM history h 
+    LEFT JOIN account a ON h.account_id = a.id 
+    WHERE h.request_id = ? 
+    ORDER BY h.timestamp DESC
+");
+$stmt->execute([$request_id]);
+$history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<div class="modal-section">
+    <h3>Request Information</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>Request ID:</strong>
+            <?php echo htmlspecialchars($request['request_id']); ?>
+        </div>
+        <div class="info-item">
+            <strong>Requester:</strong>
+            <?php echo htmlspecialchars($request['requester_name'] ?? 'Unknown'); ?>
+            <br><small><?php echo htmlspecialchars($request['requester_email'] ?? ''); ?></small>
+        </div>
+        <div class="info-item">
+            <strong>College:</strong>
+            <?php echo htmlspecialchars($request['college'] ?? 'N/A'); ?>
+        </div>
+        <div class="info-item">
+            <strong>Department Code:</strong>
+            <?php echo htmlspecialchars($request['department_code']); ?>
+        </div>
+        <div class="info-item">
+            <strong>Academic Year:</strong>
+            <?php echo htmlspecialchars($request['academic_year']); ?>
+        </div>
+        <div class="info-item">
+            <strong>Submitted:</strong>
+            <?php echo date("F j, Y g:i A", strtotime($request['timestamp'])); ?>
+        </div>
+        <div class="info-item">
+            <strong>Total Budget:</strong>
+            <span style="font-size: 18px; color: #015c2e; font-weight: bold;">
+                ₱<?php echo number_format($request['proposed_budget'], 2); ?>
+            </span>
+        </div>
+        <div class="info-item">
+            <strong>Current Status:</strong>
+            <span class="status-<?php echo strtolower($request['status']); ?>">
+                <?php echo htmlspecialchars($request['status']); ?>
+            </span>
+        </div>
+        <?php if (!is_null($request['current_approval_level'])): ?>
+        <div class="info-item">
+            <strong>Approval Progress:</strong>
+            Level <?php echo $request['current_approval_level']; ?> of <?php echo $request['total_approval_levels']; ?>
+            <?php if ($request['workflow_complete']): ?>
+                <br><small style="color: green;">✓ Workflow Complete</small>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if (!empty($entries)): ?>
+<div class="modal-section">
+    <h3>Budget Line Items</h3>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="background-color: #015c2e; color: white;">
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Row</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">GL Code</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Amount</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Fund Account</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Fund Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($entries as $entry): ?>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo $entry['row_num']; ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['gl_code']); ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['budget_description']); ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">₱<?php echo number_format($entry['amount'], 2); ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['fund_account']); ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['fund_name']); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($approval_history) || !empty($history)): ?>
+<div class="modal-section">
+    <h3>Approval Workflow</h3>
+    <?php if (!empty($approval_history)): ?>
+    <div class="history-section">
+        <h4 style="color: #015c2e; margin-bottom: 10px;">Approval Levels:</h4>
+        <?php foreach ($approval_history as $ah): ?>
+        <div class="history-item" style="border-left: 3px solid <?php 
+            echo $ah['status'] === 'approved' ? '#28a745' : 
+                ($ah['status'] === 'rejected' ? '#dc3545' : 
+                ($ah['status'] === 'pending' ? '#ffc107' : '#6c757d')); ?>; padding-left: 10px;">
+            <strong>Level <?php echo $ah['approval_level']; ?>:</strong> 
+            <?php echo htmlspecialchars($ah['approver_name'] ?? 'Unassigned'); ?>
+            <span style="text-transform: capitalize; margin-left: 10px;">(<?php echo htmlspecialchars($ah['approver_role'] ?? 'Unknown Role'); ?>)</span>
+            <br>
+            <span style="font-weight: bold; color: <?php 
+                echo $ah['status'] === 'approved' ? '#28a745' : 
+                    ($ah['status'] === 'rejected' ? '#dc3545' : 
+                    ($ah['status'] === 'pending' ? '#ffc107' : '#6c757d')); ?>">
+                Status: <?php echo ucfirst($ah['status']); ?>
+            </span>
+            <?php if ($ah['timestamp'] && $ah['status'] !== 'pending'): ?>
+                <br><small><?php echo date("M j, Y g:i A", strtotime($ah['timestamp'])); ?></small>
+            <?php endif; ?>
+            <?php if (!empty($ah['comments'])): ?>
+                <br><em>"<?php echo htmlspecialchars($ah['comments']); ?>"</em>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    
+    <?php if (!empty($history)): ?>
+    <div class="history-section" style="margin-top: 15px;">
+        <h4 style="color: #015c2e; margin-bottom: 10px;">Activity History:</h4>
+        <?php foreach ($history as $h): ?>
+        <div class="history-item">
+            <strong><?php echo date("M j, Y g:i A", strtotime($h['timestamp'])); ?></strong>
+            - <?php echo htmlspecialchars($h['approver_name'] ?? 'System'); ?>
+            <br><em><?php echo htmlspecialchars($h['action']); ?></em>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php if (strtolower($request['status']) === 'pending'): ?>
+<div class="modal-section">
+    <h3>Approval Actions</h3>
+    <div style="margin-bottom: 15px;">
+        <label for="comments" style="display: block; margin-bottom: 5px; font-weight: bold;">Comments (Optional):</label>
+        <textarea id="comments" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" 
+                  placeholder="Add any comments about your decision..."></textarea>
+    </div>
+    
+    <div class="action-buttons">
+        <button class="btn btn-approve" onclick="handleApprovalFromModal('<?php echo $request['request_id']; ?>', 'approve')">
+            ✓ Approve Request
+        </button>
+        <button class="btn btn-reject" onclick="handleApprovalFromModal('<?php echo $request['request_id']; ?>', 'reject')">
+            ✗ Reject Request
+        </button>
+        <button class="btn btn-request-info" onclick="handleApprovalFromModal('<?php echo $request['request_id']; ?>', 'request_info')">
+            ℹ Request More Information
+        </button>
+    </div>
+</div>
+
+<!-- JavaScript functions moved to main approver.php page -->
+<?php else: ?>
+<div class="modal-section">
+    <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+        <strong>This request has already been processed and cannot be modified.</strong>
+    </div>
+</div>
+<?php endif; ?>

@@ -45,7 +45,7 @@ try {
 
     // Insert into budget_request table
     $timestamp = date("Y-m-d H:i:s");
-    $status = "Submitted";
+    $status = "pending"; // Changed from "Submitted" to "pending" for workflow
 
     $insertRequest = $pdo->prepare("
         INSERT INTO budget_request (
@@ -63,6 +63,11 @@ try {
         $academic_year
     ]);
 
+    // Initialize approval workflow
+    require_once 'workflow_manager.php';
+    $workflow = new WorkflowManager($pdo);
+    $workflow->initializeWorkflow($request_id);
+
     // Insert into budget_entries table
    // Insert into budget_entries table (fully populated)
 $entryInsert = $pdo->prepare("
@@ -79,7 +84,7 @@ foreach ($entries as $entry) {
     $desc = $entry['label'];
     $amt = floatval($entry['amount']);
 
-    // For testing purposes, we fill the rest with defaults
+    // For testing purposes
     $month_year = date("Y-m-01");
     $budget_category_code = 'CAT01';
     $monthly_upload = 0;

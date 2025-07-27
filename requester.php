@@ -150,13 +150,15 @@ if ($account_id) {
 
     .modal-content {
       background-color: #fff;
-      margin: 10% auto;
+      margin: 5% auto;
       padding: 20px;
-      width: 80%;
-      max-height: 70%;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 85%;
       overflow-y: auto;
       border-radius: 10px;
       position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
 
     .close-btn {
@@ -180,7 +182,10 @@ if ($account_id) {
 <div class="dashboard-container">
   <div class="header-bar">
     <h1>REQUESTER DASHBOARD</h1>
-    <a href="create_request.php" class="create-btn">+ Create</a>
+    <div>
+      <a href="create_request.php" class="create-btn">+ Create</a>
+      <a href="logout.php" class="create-btn" style="background-color: #dc3545; margin-left: 10px;">Logout</a>
+    </div>
   </div>
 
   <div class="filters">
@@ -217,7 +222,6 @@ if ($account_id) {
 <div class="modal" id="detailsModal">
   <div class="modal-content">
     <span class="close-btn" onclick="document.getElementById('detailsModal').style.display='none'">&times;</span>
-    <h2>Request Details</h2>
     <div id="modalBody">Loading...</div>
   </div>
 </div>

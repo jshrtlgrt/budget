@@ -19,7 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['role'] = strtolower($user['role']);
         $_SESSION['user_id'] = $user['id'];
 
-        if ($_SESSION['role'] === 'approver') {
+        // Route to appropriate dashboard based on role
+        $approver_roles = ['approver', 'department_head', 'dean', 'vp_finance'];
+        if (in_array($_SESSION['role'], $approver_roles)) {
             header("Location: approver.php");
         } else {
             header("Location: requester.php");
