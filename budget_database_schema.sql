@@ -207,9 +207,70 @@ UPDATE account SET password = 'testpass' WHERE username_email IN (
 );
 
 INSERT INTO gl_account (code, name, bpr_line_item, bpr_sub_item) VALUES 
-('210304001', 'FHIT - SALARIES - 1', 'Line A', 'Sub A'),
-('210305001', 'FHIT - HONORARIA - 1', 'Line B', 'Sub B'),
-('210306001', 'FHIT - PROFESSIONAL FEE - 1', 'Line C', 'Sub C');
+-- SALARIES (1-10)
+('210304001', 'FHIT - SALARIES - 1', 'Salaries', 'Regular'),
+('210304002', 'FHIT - SALARIES - 2', 'Salaries', 'Regular'),
+('210304003', 'FHIT - SALARIES - 3', 'Salaries', 'Regular'),
+('210304004', 'FHIT - SALARIES - 4', 'Salaries', 'Regular'),
+('210304005', 'FHIT - SALARIES - 5', 'Salaries', 'Regular'),
+('210304006', 'FHIT - SALARIES - 6', 'Salaries', 'Regular'),
+('210304007', 'FHIT - SALARIES - 7', 'Salaries', 'Regular'),
+('210304008', 'FHIT - SALARIES - 8', 'Salaries', 'Regular'),
+('210304009', 'FHIT - SALARIES - 9', 'Salaries', 'Regular'),
+('210304010', 'FHIT - SALARIES - 10', 'Salaries', 'Regular'),
+
+-- HONORARIA (1-10)
+('210305001', 'FHIT - HONORARIA - 1', 'Honoraria', 'Professional'),
+('210305002', 'FHIT - HONORARIA - 2', 'Honoraria', 'Professional'),
+('210305003', 'FHIT - HONORARIA - 3', 'Honoraria', 'Professional'),
+('210305004', 'FHIT - HONORARIA - 4', 'Honoraria', 'Professional'),
+('210305005', 'FHIT - HONORARIA - 5', 'Honoraria', 'Professional'),
+('210305006', 'FHIT - HONORARIA - 6', 'Honoraria', 'Professional'),
+('210305007', 'FHIT - HONORARIA - 7', 'Honoraria', 'Professional'),
+('210305008', 'FHIT - HONORARIA - 8', 'Honoraria', 'Professional'),
+('210305009', 'FHIT - HONORARIA - 9', 'Honoraria', 'Professional'),
+('210305010', 'FHIT - HONORARIA - 10', 'Honoraria', 'Professional'),
+
+-- PROFESSIONAL FEE (1-10)
+('210306001', 'FHIT - PROFESSIONAL FEE - 1', 'Professional Fee', 'Services'),
+('210306002', 'FHIT - PROFESSIONAL FEE - 2', 'Professional Fee', 'Services'),
+('210306003', 'FHIT - PROFESSIONAL FEE - 3', 'Professional Fee', 'Services'),
+('210306004', 'FHIT - PROFESSIONAL FEE - 4', 'Professional Fee', 'Services'),
+('210306005', 'FHIT - PROFESSIONAL FEE - 5', 'Professional Fee', 'Services'),
+('210306006', 'FHIT - PROFESSIONAL FEE - 6', 'Professional Fee', 'Services'),
+('210306007', 'FHIT - PROFESSIONAL FEE - 7', 'Professional Fee', 'Services'),
+('210306008', 'FHIT - PROFESSIONAL FEE - 8', 'Professional Fee', 'Services'),
+('210306009', 'FHIT - PROFESSIONAL FEE - 9', 'Professional Fee', 'Services'),
+('210306010', 'FHIT - PROFESSIONAL FEE - 10', 'Professional Fee', 'Services'),
+
+-- OTHER FHIT EXPENSES
+('210303007', 'FHIT - TRANSPORTATION AND DELIVERY EXPENSES', 'Transportation', 'Delivery'),
+('210303028', 'FHIT - TRAVEL (LOCAL)', 'Travel', 'Local'),
+('210303029', 'FHIT - TRAVEL (FOREIGN)', 'Travel', 'Foreign'),
+('210303025', 'FHIT - ACCOMMODATION AND VENUE', 'Accommodation', 'Venue'),
+('210303003', 'FHIT - TRAVEL ALLOWANCE / PER DIEM', 'Travel Allowance', 'Per Diem'),
+('210303026', 'FHIT - FOOD AND MEALS', 'Food', 'Meals'),
+('210303018', 'FHIT - REPRESENTATION EXPENSES', 'Representation', 'Expenses'),
+('210303005', 'FHIT - REPAIRS AND MAINTENANCE OF FACILITIES', 'Repairs', 'Facilities'),
+('210303006', 'FHIT - REPAIRS AND MAINTENANCE OF VEHICLES', 'Repairs', 'Vehicles'),
+('210303008', 'FHIT - SUPPLIES AND MATERIALS EXPENSES', 'Supplies', 'Materials'),
+('210303015', 'FHIT - ADVERTISING EXPENSES', 'Advertising', 'Marketing'),
+('210303016', 'FHIT - PRINTING AND BINDING EXPENSES', 'Printing', 'Binding'),
+('210303014', 'FHIT - GENERAL SERVICES', 'General', 'Services'),
+('210303004', 'FHIT - COMMUNICATION EXPENSES', 'Communication', 'Utilities'),
+('210303009', 'FHIT - UTILITY EXPENSES', 'Utilities', 'General'),
+('210303011', 'FHIT - SCHOLARSHIP EXPENSES', 'Scholarship', 'Educational'),
+('210303010', 'FHIT - TRAINING, WORKSHOP, CONFERENCE', 'Training', 'Development'),
+('210303027', 'FHIT - MEMBERSHIP FEE', 'Membership', 'Fees'),
+('210303040', 'FHIT - INDIRECT COST - RESEARCH FEE', 'Research', 'Indirect'),
+('210303043', 'FHIT - WITHDRAWAL OF FUND', 'Withdrawal', 'Fund'),
+('210303012', 'FHIT - AWARDS/REWARDS, PRICES AND INDEMNITIES', 'Awards', 'Rewards'),
+('210303013', 'FHIT - SURVEY, RESEARCH, EXPLORATION AND DEVELOPMENT EXPENSES', 'Research', 'Development'),
+('210303017', 'FHIT - RENT EXPENSES', 'Rent', 'Facilities'),
+('210303019', 'FHIT - SUBSCRIPTION EXPENSES', 'Subscription', 'Services'),
+('210303020', 'FHIT - DONATIONS', 'Donations', 'Charitable'),
+('210303022', 'FHIT - TAXES, INSURANCE PREMIUMS AND OTHER FEES', 'Taxes', 'Insurance'),
+('210303023', 'FHIT - OTHER MAINTENANCE AND OPERATING EXPENSES', 'Maintenance', 'Operating');
 
 INSERT INTO fund_type (code, name) VALUES ('FT01', 'FHIT Fund');
 INSERT INTO nature (code, name) VALUES ('NT01', 'Operating');
