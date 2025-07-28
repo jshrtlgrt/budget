@@ -9,7 +9,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $request_id = $_GET['request_id'];
 
 // Get request details
-$stmt = $pdo->prepare("SELECT br.*, a.name as requester_name FROM budget_request br LEFT JOIN account a ON br.account_id = a.id WHERE br.request_id = ?");
+$stmt = $pdo->prepare("SELECT br.*, a.name as requester_name, c.name as campus_name FROM budget_request br LEFT JOIN account a ON br.account_id = a.id LEFT JOIN campus c ON br.campus_code = c.code WHERE br.request_id = ?");
 $stmt->execute([$request_id]);
 $request = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -40,11 +40,27 @@ echo "<h3 style='margin: 0 0 10px 0; color: #015c2e;'>📋 Request Overview</h3>
 echo "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 15px;'>";
 echo "<div><strong>Request ID:</strong> $request_id</div>";
 echo "<div><strong>Requester:</strong> {$request['requester_name']}</div>";
-echo "<div><strong>Department:</strong> {$request['department_code']}</div>";
+echo "<div><strong>Campus Code:</strong> {$request['campus_code']} - {$request['campus_name']}</div>";
+echo "<div><strong>Department Code:</strong> {$request['department_code']}</div>";
+echo "<div><strong>Fund Account Code:</strong> {$request['fund_account']}</div>";
+echo "<div><strong>Fund Name:</strong> {$request['fund_name']}</div>";
+echo "<div><strong>Duration:</strong> {$request['duration']}</div>";
 echo "<div><strong>Academic Year:</strong> {$request['academic_year']}</div>";
 echo "<div><strong>Total Amount:</strong> ₱" . number_format($request['proposed_budget'], 2) . "</div>";
 echo "<div><strong>Submitted:</strong> " . date('M j, Y g:i A', strtotime($request['timestamp'])) . "</div>";
 echo "</div>";
+
+if (!empty($request['budget_title']) || !empty($request['description'])) {
+    echo "<div style='background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6;'>";
+    echo "<h3 style='margin: 0 0 10px 0; color: #015c2e;'>📝 Request Details</h3>";
+    if (!empty($request['budget_title'])) {
+        echo "<div style='margin-bottom: 10px;'><strong>Budget Request Title:</strong> {$request['budget_title']}</div>";
+    }
+    if (!empty($request['description'])) {
+        echo "<div><strong>Description:</strong><br><div style='background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;'>{$request['description']}</div></div>";
+    }
+    echo "</div>";
+}
 echo "</div>";
 
 // Check for special status alerts
@@ -248,7 +264,7 @@ if (!empty($entries)) {
     echo "<div style='overflow-x: auto;'>";
     echo "<table style='width:100%; border-collapse:collapse; border: 1px solid #dee2e6;'>";
     echo "<thead style='background: #f8f9fa;'>";
-    echo "<tr style='font-weight:bold;'><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Row</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>GL Code</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Description</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: right;'>Amount</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Fund Account</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Fund Name</th></tr>";
+    echo "<tr style='font-weight:bold;'><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Row</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>GL Code</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Description</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: left;'>Remarks</th><th style='padding: 12px; border: 1px solid #dee2e6; text-align: right;'>Amount</th></tr>";
     echo "</thead>";
     echo "<tbody>";
 
@@ -259,16 +275,14 @@ if (!empty($entries)) {
         echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>{$entry['row_num']}</td>";
         echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>{$entry['gl_code']}</td>";
         echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>{$entry['budget_description']}</td>";
-        echo "<td style='padding: 10px; border: 1px solid #dee2e6; text-align: right;'>₱" . number_format($entry['amount'], 2) . "</td>";
-        echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>{$entry['fund_account']}</td>";
-        echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>{$entry['fund_name']}</td>";
+        echo "<td style='padding: 10px; border: 1px solid #dee2e6;'>" . ($entry['remarks'] ? htmlspecialchars($entry['remarks']) : '<em style="color: #6c757d;">No remarks</em>') . "</td>";
+        echo "<td style='padding: 10px; border: 1px solid #dee2e6; text-align: right;'><span class='clickable-amount' onclick='showDistribution(\"" . htmlspecialchars($entry['gl_code']) . "\", \"" . htmlspecialchars($entry['budget_description']) . "\", " . $entry['amount'] . ", \"" . htmlspecialchars($request['duration']) . "\")'>₱" . number_format($entry['amount'], 2) . "</span></td>";
         echo "</tr>";
     }
     
     echo "<tr style='background: #f8f9fa; font-weight: bold;'>";
-    echo "<td colspan='3' style='padding: 12px; border: 1px solid #dee2e6; text-align: right;'>TOTAL:</td>";
+    echo "<td colspan='4' style='padding: 12px; border: 1px solid #dee2e6; text-align: right;'>TOTAL:</td>";
     echo "<td style='padding: 12px; border: 1px solid #dee2e6; text-align: right;'>₱" . number_format($total, 2) . "</td>";
-    echo "<td colspan='2' style='padding: 12px; border: 1px solid #dee2e6;'></td>";
     echo "</tr>";
     
     echo "</tbody>";

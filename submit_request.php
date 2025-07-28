@@ -22,9 +22,13 @@ try {
     }
 
     // Get form data
+    $campus = $_POST['campus'];
     $department = $_POST['department'];
     $fund_account = $_POST['fund_account'];
     $fund_name = $_POST['fund_name'];
+    $duration = $_POST['duration'];
+    $budget_title = $_POST['budget_title'];
+    $description = $_POST['description'];
     $entries = json_decode($_POST['budget_entries'], true);
 
     // Calculate total
@@ -49,15 +53,22 @@ try {
 
     $insertRequest = $pdo->prepare("
         INSERT INTO budget_request (
-            request_id, account_id, timestamp, department_code,
+            request_id, account_id, timestamp, department_code, campus_code,
+            fund_account, fund_name, duration, budget_title, description,
             proposed_budget, status, academic_year
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $insertRequest->execute([
         $request_id,
         $account_id,
         $timestamp,
         $department,
+        $campus,
+        $fund_account,
+        $fund_name,
+        $duration,
+        $budget_title,
+        $description,
         $total,
         $status,
         $academic_year
@@ -73,15 +84,16 @@ try {
 $entryInsert = $pdo->prepare("
     INSERT INTO budget_entries (
         request_id, row_num, month_year, gl_code, budget_category_code,
-        budget_description, amount, monthly_upload, manual_adjustment,
+        budget_description, remarks, amount, monthly_upload, manual_adjustment,
         upload_multiplier, fund_type_code, nature_code, fund_account, fund_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
 $rowNum = 1;
 foreach ($entries as $entry) {
     $gl = $entry['gl_code'];
     $desc = $entry['label'];
+    $remarks = $entry['remarks'] ?? '';
     $amt = floatval($entry['amount']);
 
     // For testing purposes
@@ -100,6 +112,7 @@ foreach ($entries as $entry) {
         $gl,
         $budget_category_code,
         $desc,
+        $remarks,
         $amt,
         $monthly_upload,
         $manual_adjustment,

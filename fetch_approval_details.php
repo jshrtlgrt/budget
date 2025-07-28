@@ -19,10 +19,11 @@ $request_id = $_GET['request_id'];
 // Get request details with requester and department info
 $stmt = $pdo->prepare("
     SELECT br.*, a.name as requester_name, a.username_email as requester_email, 
-           d.college, d.budget_deck 
+           d.college, d.budget_deck, c.name as campus_name
     FROM budget_request br 
     LEFT JOIN account a ON br.account_id = a.id 
     LEFT JOIN department d ON br.department_code = d.code 
+    LEFT JOIN campus c ON br.campus_code = c.code
     WHERE br.request_id = ?
 ");
 $stmt->execute([$request_id]);
@@ -67,12 +68,28 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <br><small><?php echo htmlspecialchars($request['requester_email'] ?? ''); ?></small>
         </div>
         <div class="info-item">
-            <strong>College:</strong>
-            <?php echo htmlspecialchars($request['college'] ?? 'N/A'); ?>
+            <strong>Campus Code:</strong>
+            <?php echo htmlspecialchars($request['campus_code'] ?? 'N/A') . ' - ' . htmlspecialchars($request['campus_name'] ?? 'N/A'); ?>
         </div>
         <div class="info-item">
             <strong>Department Code:</strong>
             <?php echo htmlspecialchars($request['department_code']); ?>
+        </div>
+        <div class="info-item">
+            <strong>College:</strong>
+            <?php echo htmlspecialchars($request['college'] ?? 'N/A'); ?>
+        </div>
+        <div class="info-item">
+            <strong>Fund Account Code:</strong>
+            <?php echo htmlspecialchars($request['fund_account'] ?? 'N/A'); ?>
+        </div>
+        <div class="info-item">
+            <strong>Fund Name:</strong>
+            <?php echo htmlspecialchars($request['fund_name'] ?? 'N/A'); ?>
+        </div>
+        <div class="info-item">
+            <strong>Duration:</strong>
+            <?php echo htmlspecialchars($request['duration'] ?? 'N/A'); ?>
         </div>
         <div class="info-item">
             <strong>Academic Year:</strong>
@@ -106,6 +123,28 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<?php if (!empty($request['budget_title']) || !empty($request['description'])): ?>
+<div class="modal-section">
+    <h3>Request Details</h3>
+    <div class="info-grid">
+        <?php if (!empty($request['budget_title'])): ?>
+        <div class="info-item" style="grid-column: 1 / -1;">
+            <strong>Budget Request Title:</strong>
+            <?php echo htmlspecialchars($request['budget_title']); ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($request['description'])): ?>
+        <div class="info-item" style="grid-column: 1 / -1;">
+            <strong>Description:</strong>
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                <?php echo nl2br(htmlspecialchars($request['description'])); ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (!empty($entries)): ?>
 <div class="modal-section">
     <h3>Budget Line Items</h3>
@@ -116,9 +155,8 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Row</th>
                     <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">GL Code</th>
                     <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Description</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Remarks</th>
                     <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Amount</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Fund Account</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Fund Name</th>
                 </tr>
             </thead>
             <tbody>
@@ -127,9 +165,12 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td style="padding: 10px; border: 1px solid #ddd;"><?php echo $entry['row_num']; ?></td>
                     <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['gl_code']); ?></td>
                     <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['budget_description']); ?></td>
-                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">₱<?php echo number_format($entry['amount'], 2); ?></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['fund_account']); ?></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($entry['fund_name']); ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><?php echo !empty($entry['remarks']) ? htmlspecialchars($entry['remarks']) : '<em style="color: #6c757d;">No remarks</em>'; ?></td>
+                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">
+                        <span class="clickable-amount" onclick="showDistribution('<?php echo $entry['gl_code']; ?>', '<?php echo addslashes($entry['budget_description']); ?>', <?php echo $entry['amount']; ?>, '<?php echo $request['duration'] ?? 'Annually'; ?>')">
+                            ₱<?php echo number_format($entry['amount'], 2); ?>
+                        </span>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

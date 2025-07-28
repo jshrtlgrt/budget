@@ -97,6 +97,12 @@ CREATE TABLE budget_request (
     account_id INT,
     timestamp TIMESTAMP,
     department_code VARCHAR(10),
+    campus_code VARCHAR(10),
+    fund_account VARCHAR(100),
+    fund_name VARCHAR(255),
+    duration VARCHAR(50),
+    budget_title VARCHAR(255),
+    description TEXT,
     proposed_budget DECIMAL(12, 2),
     status VARCHAR(50),
     academic_year VARCHAR(10),
@@ -104,7 +110,8 @@ CREATE TABLE budget_request (
     total_approval_levels INT DEFAULT 3,
     workflow_complete BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (account_id) REFERENCES account(id),
-    FOREIGN KEY (department_code) REFERENCES department(code)
+    FOREIGN KEY (department_code) REFERENCES department(code),
+    FOREIGN KEY (campus_code) REFERENCES campus(code)
 );
 
 CREATE TABLE budget_entries (
@@ -114,6 +121,7 @@ CREATE TABLE budget_entries (
     gl_code VARCHAR(20),
     budget_category_code VARCHAR(20),
     budget_description TEXT,
+    remarks TEXT,
     amount DECIMAL(12, 2),
     monthly_upload BOOLEAN,
     manual_adjustment BOOLEAN,
@@ -186,7 +194,18 @@ INSERT INTO campus (code, name) VALUES
 ('11', 'Manila'), ('12', 'Makati'), ('13', 'McKinley'), ('21', 'Laguna'), ('31', 'BGC');
 
 INSERT INTO department (code, college, budget_deck, division_code, campus_code) VALUES 
-('999', 'Test College', 'Test Deck', 'DIV01', '11');
+('999', 'Test College', 'Test Deck', 'DIV01', '11'),
+('CCS', 'College of Computer Studies', 'CCS Deck', 'DIV01', '11'),
+('CLA', 'College of Liberal Arts', 'CLA Deck', 'DIV01', '11'),
+('COB', 'Ramon V. del Rosario College of Business', 'COB Deck', 'DIV01', '11'),
+('GCOE', 'Gokongwei College of Engineering', 'GCOE Deck', 'DIV01', '11'),
+('COS', 'College of Science', 'COS Deck', 'DIV01', '11'),
+('SOE', 'School of Economics', 'SOE Deck', 'DIV01', '11'),
+('BAGCED', 'Br. Andrew Gonzalez College of Education', 'BAGCED Deck', 'DIV01', '11'),
+('COL', 'College of Law', 'COL Deck', 'DIV01', '11'),
+('JMRIG', 'Jesse M. Robredo Institute of Governance', 'JMRIG Deck', 'DIV01', '11'),
+('GSB', 'Graduate School of Business', 'GSB Deck', 'DIV01', '11'),
+('IGSP', 'La Salle Institute for Governance and Strategic Policy', 'IGSP Deck', 'DIV01', '11');
 
 -- Insert test accounts (ALL ROLES) - PASSWORDS EXPLICITLY SET
 DELETE FROM account WHERE username_email LIKE '%@example.com';
@@ -293,11 +312,111 @@ VALUES ('999', 0.01, 2, 'dean', TRUE);
 INSERT INTO approval_workflow (department_code, amount_threshold, approval_level, approver_role, is_required) 
 VALUES ('999', 0.01, 3, 'vp_finance', TRUE);
 
+-- Update existing database structure (for existing installations)
+-- Add missing columns to budget_request table if they don't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'campus_code') = 0,
+    'ALTER TABLE budget_request ADD COLUMN campus_code VARCHAR(10) AFTER department_code',
+    'SELECT "campus_code column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'fund_account') = 0,
+    'ALTER TABLE budget_request ADD COLUMN fund_account VARCHAR(100) AFTER campus_code',
+    'SELECT "fund_account column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'fund_name') = 0,
+    'ALTER TABLE budget_request ADD COLUMN fund_name VARCHAR(255) AFTER fund_account',
+    'SELECT "fund_name column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'duration') = 0,
+    'ALTER TABLE budget_request ADD COLUMN duration VARCHAR(50) AFTER fund_name',
+    'SELECT "duration column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'budget_title') = 0,
+    'ALTER TABLE budget_request ADD COLUMN budget_title VARCHAR(255) AFTER duration',
+    'SELECT "budget_title column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'description') = 0,
+    'ALTER TABLE budget_request ADD COLUMN description TEXT AFTER budget_title',
+    'SELECT "description column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add remarks column to budget_entries table if it doesn't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE table_name = 'budget_entries' 
+     AND table_schema = 'budget_database_schema' 
+     AND column_name = 'remarks') = 0,
+    'ALTER TABLE budget_entries ADD COLUMN remarks TEXT AFTER budget_description',
+    'SELECT "remarks column already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key constraint for campus_code if it doesn't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+     WHERE table_name = 'budget_request' 
+     AND table_schema = 'budget_database_schema' 
+     AND constraint_name = 'fk_budget_request_campus') = 0,
+    'ALTER TABLE budget_request ADD CONSTRAINT fk_budget_request_campus FOREIGN KEY (campus_code) REFERENCES campus(code)',
+    'SELECT "campus foreign key already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 -- Show setup completion message
 SELECT 
     'SETUP COMPLETE!' as status,
     'All budget requests require ALL 3 approval levels' as workflow_rule,
-    'No amount-based skipping allowed' as policy;
+    'Database updated with new columns' as update_status;
 
 -- Show test accounts with actual passwords
 SELECT 'TEST ACCOUNTS:' as info;
@@ -311,6 +430,113 @@ SELECT
         ELSE '❌ PASSWORD MISMATCH DETECTED' 
     END as password_status
 FROM account WHERE username_email LIKE '%@example.com';
+
+-- Add workflow configurations for all La Salle departments
+INSERT INTO approval_workflow (department_code, amount_threshold, approval_level, approver_role, is_required) VALUES
+-- CCS - College of Computer Studies
+('CCS', 0.01, 1, 'department_head', TRUE),
+('CCS', 0.01, 2, 'dean', TRUE),
+('CCS', 0.01, 3, 'vp_finance', TRUE),
+-- CLA - College of Liberal Arts
+('CLA', 0.01, 1, 'department_head', TRUE),
+('CLA', 0.01, 2, 'dean', TRUE),
+('CLA', 0.01, 3, 'vp_finance', TRUE),
+-- COB - Ramon V. del Rosario College of Business
+('COB', 0.01, 1, 'department_head', TRUE),
+('COB', 0.01, 2, 'dean', TRUE),
+('COB', 0.01, 3, 'vp_finance', TRUE),
+-- GCOE - Gokongwei College of Engineering
+('GCOE', 0.01, 1, 'department_head', TRUE),
+('GCOE', 0.01, 2, 'dean', TRUE),
+('GCOE', 0.01, 3, 'vp_finance', TRUE),
+-- COS - College of Science
+('COS', 0.01, 1, 'department_head', TRUE),
+('COS', 0.01, 2, 'dean', TRUE),
+('COS', 0.01, 3, 'vp_finance', TRUE),
+-- SOE - School of Economics
+('SOE', 0.01, 1, 'department_head', TRUE),
+('SOE', 0.01, 2, 'dean', TRUE),
+('SOE', 0.01, 3, 'vp_finance', TRUE),
+-- BAGCED - Br. Andrew Gonzalez College of Education
+('BAGCED', 0.01, 1, 'department_head', TRUE),
+('BAGCED', 0.01, 2, 'dean', TRUE),
+('BAGCED', 0.01, 3, 'vp_finance', TRUE),
+-- COL - College of Law
+('COL', 0.01, 1, 'department_head', TRUE),
+('COL', 0.01, 2, 'dean', TRUE),
+('COL', 0.01, 3, 'vp_finance', TRUE),
+-- JMRIG - Jesse M. Robredo Institute of Governance
+('JMRIG', 0.01, 1, 'department_head', TRUE),
+('JMRIG', 0.01, 2, 'dean', TRUE),
+('JMRIG', 0.01, 3, 'vp_finance', TRUE),
+-- GSB - Graduate School of Business
+('GSB', 0.01, 1, 'department_head', TRUE),
+('GSB', 0.01, 2, 'dean', TRUE),
+('GSB', 0.01, 3, 'vp_finance', TRUE),
+-- IGSP - La Salle Institute for Governance and Strategic Policy
+('IGSP', 0.01, 1, 'department_head', TRUE),
+('IGSP', 0.01, 2, 'dean', TRUE),
+('IGSP', 0.01, 3, 'vp_finance', TRUE);
+
+-- Add diverse budget request test data across La Salle departments using existing test user
+SET @test_user = (SELECT id FROM account WHERE username_email = 'testuser@example.com');
+
+-- CCS - College of Computer Studies (High Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('CCS2025001', @test_user, '2025-01-15 09:00:00', 'CCS', '11', '2025-2026', 'approved', 85000.00, 3, TRUE, 'CCS-FUND-001', 'Computer Studies Research Fund', 'Annually', 'Laboratory Equipment', 'New computers and networking equipment for labs'),
+('CCS2025002', @test_user, '2025-01-20 10:00:00', 'CCS', '11', '2025-2026', 'approved', 65000.00, 3, TRUE, 'CCS-FUND-002', 'CCS Software Fund', 'Quarterly', 'Software Licenses', 'Development tools and software licenses'),
+('CCS2025003', @test_user, '2025-02-01 11:00:00', 'CCS', '11', '2025-2026', 'pending', 90000.00, 2, FALSE, 'CCS-FUND-003', 'CCS Operations Fund', 'Monthly', 'Server Infrastructure', 'Server upgrade and maintenance');
+
+-- CLA - College of Liberal Arts (Moderate Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('CLA2025001', @test_user, '2025-01-12 08:30:00', 'CLA', '11', '2025-2026', 'approved', 45000.00, 3, TRUE, 'CLA-FUND-001', 'Liberal Arts Culture Fund', 'Annually', 'Cultural Events', 'Art exhibitions and cultural programs'),
+('CLA2025002', @test_user, '2025-01-25 14:00:00', 'CLA', '11', '2025-2026', 'rejected', 75000.00, 2, TRUE, 'CLA-FUND-002', 'CLA Research Fund', 'Quarterly', 'Research Materials', 'Books and research resources'),
+('CLA2025003', @test_user, '2025-02-05 16:30:00', 'CLA', '11', '2025-2026', 'approved', 38000.00, 3, TRUE, 'CLA-FUND-003', 'CLA Development Fund', 'Monthly', 'Faculty Development', 'Training and workshops for faculty');
+
+-- COB - Ramon V. del Rosario College of Business (Good Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('COB2025001', @test_user, '2025-01-18 10:15:00', 'COB', '11', '2025-2026', 'approved', 95000.00, 3, TRUE, 'COB-FUND-001', 'Business Excellence Fund', 'Annually', 'Business Lab Upgrade', 'Trading simulation and business analysis tools'),
+('COB2025002', @test_user, '2025-02-03 09:45:00', 'COB', '11', '2025-2026', 'approved', 72000.00, 3, TRUE, 'COB-FUND-002', 'COB Training Fund', 'Quarterly', 'Executive Programs', 'Business executive training programs'),
+('COB2025003', @test_user, '2025-02-08 13:20:00', 'COB', '11', '2025-2026', 'pending', 56000.00, 1, FALSE, 'COB-FUND-003', 'COB Research Fund', 'Monthly', 'Market Research', 'Business intelligence and market analysis tools');
+
+-- GCOE - Gokongwei College of Engineering (High Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('GCOE2025001', @test_user, '2025-01-22 11:30:00', 'GCOE', '11', '2025-2026', 'approved', 120000.00, 3, TRUE, 'GCOE-FUND-001', 'Engineering Excellence Fund', 'Annually', 'Laboratory Equipment', 'Advanced engineering laboratory equipment'),
+('GCOE2025002', @test_user, '2025-02-10 15:00:00', 'GCOE', '11', '2025-2026', 'approved', 88000.00, 3, TRUE, 'GCOE-FUND-002', 'GCOE Innovation Fund', 'Quarterly', 'Research Projects', 'Engineering research and innovation projects');
+
+-- COS - College of Science (High Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('COS2025001', @test_user, '2025-01-16 12:00:00', 'COS', '11', '2025-2026', 'approved', 110000.00, 3, TRUE, 'COS-FUND-001', 'Science Research Fund', 'Annually', 'Laboratory Chemicals', 'Chemical reagents and scientific supplies'),
+('COS2025002', @test_user, '2025-02-07 10:30:00', 'COS', '11', '2025-2026', 'approved', 79000.00, 3, TRUE, 'COS-FUND-002', 'COS Equipment Fund', 'Quarterly', 'Scientific Instruments', 'Microscopes and analytical instruments');
+
+-- SOE - School of Economics (Moderate Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('SOE2025001', @test_user, '2025-01-28 14:45:00', 'SOE', '11', '2025-2026', 'approved', 52000.00, 3, TRUE, 'SOE-FUND-001', 'Economics Research Fund', 'Annually', 'Economic Analysis Tools', 'Statistical software and economic databases'),
+('SOE2025002', @test_user, '2025-02-12 16:15:00', 'SOE', '11', '2025-2026', 'rejected', 67000.00, 1, TRUE, 'SOE-FUND-002', 'SOE Development Fund', 'Quarterly', 'Policy Research', 'Economic policy research and analysis');
+
+-- BAGCED - Br. Andrew Gonzalez College of Education (Low Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('BAGCED2025001', @test_user, '2025-01-14 13:30:00', 'BAGCED', '11', '2025-2026', 'rejected', 83000.00, 1, TRUE, 'BAGCED-FUND-001', 'Education Innovation Fund', 'Annually', 'Teaching Materials', 'Educational technology and teaching aids'),
+('BAGCED2025002', @test_user, '2025-02-04 11:20:00', 'BAGCED', '11', '2025-2026', 'rejected', 61000.00, 2, TRUE, 'BAGCED-FUND-002', 'BAGCED Training Fund', 'Quarterly', 'Teacher Training', 'Professional development for educators');
+
+-- COL - College of Law (Low Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('COL2025001', @test_user, '2025-01-30 15:45:00', 'COL', '11', '2025-2026', 'rejected', 74000.00, 1, TRUE, 'COL-FUND-001', 'Law Library Fund', 'Annually', 'Legal Databases', 'Online legal research databases and resources');
+
+-- JMRIG - Jesse M. Robredo Institute of Governance (Good Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('JMRIG2025001', @test_user, '2025-01-26 09:15:00', 'JMRIG', '11', '2025-2026', 'approved', 98000.00, 3, TRUE, 'JMRIG-FUND-001', 'Governance Research Fund', 'Annually', 'Policy Research', 'Governance and policy research projects'),
+('JMRIG2025002', @test_user, '2025-02-09 12:40:00', 'JMRIG', '11', '2025-2026', 'approved', 63000.00, 3, TRUE, 'JMRIG-FUND-002', 'JMRIG Training Fund', 'Quarterly', 'Leadership Programs', 'Governance and leadership training programs');
+
+-- GSB - Graduate School of Business (High Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('GSB2025001', @test_user, '2025-01-24 10:50:00', 'GSB', '11', '2025-2026', 'approved', 115000.00, 3, TRUE, 'GSB-FUND-001', 'Graduate Business Fund', 'Annually', 'Executive Education', 'Executive MBA and graduate programs enhancement'),
+('GSB2025002', @test_user, '2025-02-11 14:25:00', 'GSB', '11', '2025-2026', 'approved', 87000.00, 3, TRUE, 'GSB-FUND-002', 'GSB Innovation Fund', 'Quarterly', 'Business Innovation', 'Innovation labs and entrepreneurship programs');
+
+-- IGSP - La Salle Institute for Governance and Strategic Policy (Moderate Success Rate)
+INSERT INTO budget_request (request_id, account_id, timestamp, department_code, campus_code, academic_year, status, proposed_budget, current_approval_level, workflow_complete, fund_account, fund_name, duration, budget_title, description) VALUES
+('IGSP2025001', @test_user, '2025-02-02 11:00:00', 'IGSP', '11', '2025-2026', 'approved', 69000.00, 3, TRUE, 'IGSP-FUND-001', 'Strategic Policy Fund', 'Annually', 'Policy Analysis', 'Strategic policy research and analysis tools'),
+('IGSP2025002', @test_user, '2025-02-13 13:15:00', 'IGSP', '11', '2025-2026', 'more_info_requested', 81000.00, 2, FALSE, 'IGSP-FUND-002', 'IGSP Development Fund', 'Quarterly', 'Governance Tools', 'Governance analysis and strategic planning tools');
 
 -- Show workflow configuration
 SELECT 'WORKFLOW CONFIGURATION:' as info;

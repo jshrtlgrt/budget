@@ -57,6 +57,69 @@ if (!isset($_SESSION['username'])) {
     }
     .submit { background: #006633; color: #fff; border: none; }
     .back-btn { text-decoration: none; color: #006633; font-weight: bold; }
+    
+    /* Distribution Modal Styles */
+    .distribution-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    
+    .distribution-modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 30px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .distribution-close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .distribution-close:hover {
+      color: #000;
+    }
+    
+    .clickable-amount {
+      color: #006633;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    
+    .clickable-amount:hover {
+      color: #004d26;
+      font-weight: bold;
+    }
+    
+    .distribution-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    
+    .distribution-table th,
+    .distribution-table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    
+    .distribution-table th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -90,10 +153,10 @@ if (!isset($_SESSION['username'])) {
       </div>
       <div class="form-group">
         <label for="duration">Duration</label>
-        <select name="duration">
-          <option>Whole Year</option>
-          <option>Quarterly</option>
-          <option>Half Year</option>
+        <select name="duration" id="duration">
+          <option value="Annually">Annually</option>
+          <option value="Quarterly">Quarterly</option>
+          <option value="Monthly">Monthly</option>
         </select>
       </div>
     </div>
@@ -127,6 +190,17 @@ if (!isset($_SESSION['username'])) {
     <button type="submit" class="btn submit">Submit Request</button>
   </div>
 </form>
+
+<!-- Distribution Modal -->
+<div id="distributionModal" class="distribution-modal">
+  <div class="distribution-modal-content">
+    <span class="distribution-close" onclick="closeDistributionModal()">&times;</span>
+    <h2>Budget Distribution Details</h2>
+    <div id="distributionDetails">
+      <!-- Distribution details will be populated here -->
+    </div>
+  </div>
+</div>
 
 <script>
 const glOptions = {
@@ -228,6 +302,11 @@ otherDesc.type = "text";
 otherDesc.placeholder = "Describe (for Others)";
 otherDesc.style.display = "none";
 
+// Remarks field
+const remarksInput = document.createElement("input");
+remarksInput.type = "text";
+remarksInput.placeholder = "Remarks (optional)";
+
 // Amount
 const amountInput = document.createElement("input");
 amountInput.type = "text"; // allow ₱ formatting if used
@@ -271,6 +350,7 @@ amountInput.placeholder = "₱ 0.00";
     glCodeInput.style.display = "none";
 
     row.appendChild(otherDesc);
+    row.appendChild(remarksInput);
     row.appendChild(amountInput);
   } else {
     otherDesc.style.display = "none";
@@ -278,6 +358,7 @@ amountInput.placeholder = "₱ 0.00";
     glCodeInput.value = glOptions[label] || "";
 
     row.appendChild(glCodeInput);
+    row.appendChild(remarksInput);
     row.appendChild(amountInput);
   }
 
@@ -310,9 +391,11 @@ amountInput.addEventListener("blur", () => {
 // Default layout (can be overridden in onchange)
 if (select.value === "Others") {
   row.appendChild(otherDesc);
+  row.appendChild(remarksInput);
   row.appendChild(amountInput);
 } else {
   row.appendChild(glCodeInput);
+  row.appendChild(remarksInput);
   row.appendChild(amountInput);
 }
 row.appendChild(removeBtn);
@@ -334,17 +417,19 @@ function updateSummary() {
     if (!labelSelected) return; // skip placeholder rows
 
     const inputs = row.querySelectorAll("input");
-    let amountInput, glInput, otherInput;
+    let amountInput, glInput, otherInput, remarksInput;
 
     inputs.forEach(input => {
     if (input.placeholder.includes('₱')) amountInput = input;
     else if (input.placeholder.includes('GL')) glInput = input;
     else if (input.placeholder.includes('Describe')) otherInput = input;
+    else if (input.placeholder.includes('Remarks')) remarksInput = input;
     });
 
     const amountRaw = amountInput?.value.replace(/[^\d.]/g, '') || '0';
     const amount = parseFloat(amountRaw) || 0;
     const otherDesc = otherInput?.value.trim() || '';
+    const remarks = remarksInput?.value.trim() || '';
 
     const displayLabel = (labelSelected === "Others")
     ? `Others - ${otherDesc}`
@@ -354,7 +439,7 @@ function updateSummary() {
     const glCode = glOptions[labelSelected] || "";
 
     if (amount > 0) {
-      data.push({ label: displayLabel, gl_code: glCode, amount });
+      data.push({ label: displayLabel, gl_code: glCode, remarks: remarks, amount });
       total += amount;
     }
   });
@@ -363,14 +448,135 @@ function updateSummary() {
 
   summary.innerHTML = "";
   data.forEach(item => {
-    summary.innerHTML += `<div>${item.label}: ₱ ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`;
-
+    const duration = document.getElementById('duration').value;
+    summary.innerHTML += `<div>${item.label}: <span class="clickable-amount" onclick="showDistribution('${item.gl_code}', '${item.label.replace(/'/g, "\\'")}', ${item.amount}, '${duration}')">₱ ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>`;
   });
   totalElem.textContent = "Total: ₱ " + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 }
 function prepareEntryData() {
   updateSummary(); // ensure latest data serialized before submit
+}
+
+// Budget Distribution Functions
+function getAcademicYearMonths() {
+  // Academic year runs from September 2025 to August 2026
+  const months = [];
+  
+  // September to December 2025
+  for (let month = 9; month <= 12; month++) {
+    months.push({
+      month: month,
+      year: 2025,
+      name: new Date(2025, month - 1).toLocaleString('default', { month: 'long' }) + ' 2025'
+    });
+  }
+  
+  // January to August 2026
+  for (let month = 1; month <= 8; month++) {
+    months.push({
+      month: month,
+      year: 2026,
+      name: new Date(2026, month - 1).toLocaleString('default', { month: 'long' }) + ' 2026'
+    });
+  }
+  
+  return months;
+}
+
+function calculateDistribution(totalAmount, duration) {
+  const months = getAcademicYearMonths();
+  const distribution = [];
+  
+  switch(duration) {
+    case 'Monthly':
+      const monthlyAmount = totalAmount / months.length;
+      months.forEach(month => {
+        distribution.push({
+          period: month.name,
+          amount: monthlyAmount
+        });
+      });
+      break;
+      
+    case 'Quarterly':
+      const quarterlyAmount = totalAmount / 4;
+      const quarters = [
+        { name: 'Q1 (Sep-Nov 2025)', months: months.slice(0, 3) },
+        { name: 'Q2 (Dec 2025 - Feb 2026)', months: months.slice(3, 6) },
+        { name: 'Q3 (Mar-May 2026)', months: months.slice(6, 9) },
+        { name: 'Q4 (Jun-Aug 2026)', months: months.slice(9, 12) }
+      ];
+      
+      quarters.forEach(quarter => {
+        distribution.push({
+          period: quarter.name,
+          amount: quarterlyAmount
+        });
+      });
+      break;
+      
+    case 'Annually':
+    default:
+      distribution.push({
+        period: 'Annual (Sep 2025 - Aug 2026)',
+        amount: totalAmount
+      });
+      break;
+  }
+  
+  return distribution;
+}
+
+function showDistribution(glCode, description, amount, duration) {
+  const distribution = calculateDistribution(amount, duration);
+  
+  let detailsHTML = `
+    <div style="margin-bottom: 20px;">
+      <p><strong>Line Item:</strong> ${glCode}</p>
+      <p><strong>Description:</strong> ${description}</p>
+      <p><strong>Total Amount:</strong> PHP ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+      <p><strong>Distribution Chosen:</strong> ${duration}</p>
+    </div>
+    
+    <table class="distribution-table">
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  distribution.forEach(item => {
+    detailsHTML += `
+      <tr>
+        <td>${item.period}</td>
+        <td>PHP ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    `;
+  });
+  
+  detailsHTML += `
+      </tbody>
+    </table>
+  `;
+  
+  document.getElementById('distributionDetails').innerHTML = detailsHTML;
+  document.getElementById('distributionModal').style.display = 'block';
+}
+
+function closeDistributionModal() {
+  document.getElementById('distributionModal').style.display = 'none';
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+  const modal = document.getElementById('distributionModal');
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
 }
 
 </script>
