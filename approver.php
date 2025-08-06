@@ -5,6 +5,10 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'approver') {
     exit;
 }
 require 'db.php';
+
+require_once 'auth_check.php';
+requireRole(['approver', 'department_head', 'dean', 'vp_finance']); // Shared access
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
