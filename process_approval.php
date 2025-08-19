@@ -23,6 +23,7 @@ $workflow = new WorkflowManager($pdo);
 $request_id = $_POST['request_id'] ?? '';
 $action = $_POST['action'] ?? '';
 $comments = $_POST['comments'] ?? '';
+$approved_amounts = $_POST['approved_amounts'] ?? [];
 
 if (empty($request_id) || empty($action)) {
     echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
@@ -68,6 +69,39 @@ try {
     
     if ($request_data['workflow_complete']) {
         throw new Exception('Request workflow has already been completed');
+    }
+    
+    // If VP Finance is approving and provided approved amounts, save them
+    if ($_SESSION['role'] === 'vp_finance' && $action === 'approve' && !empty($approved_amounts)) {
+        // Update approved amounts for each budget entry
+        foreach ($approved_amounts as $row_num => $approved_amount) {
+            if (!empty($approved_amount) && is_numeric($approved_amount) && $approved_amount > 0) {
+                $stmt = $pdo->prepare("
+                    UPDATE budget_entries 
+                    SET approved_amount = ? 
+                    WHERE request_id = ? AND row_num = ?
+                ");
+                $stmt->execute([$approved_amount, $request_id, $row_num]);
+            }
+        }
+        
+        // Update the total approved budget in budget_request
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(CASE WHEN approved_amount IS NOT NULL THEN approved_amount ELSE amount END), 0) as total_approved
+            FROM budget_entries 
+            WHERE request_id = ?
+        ");
+        $stmt->execute([$request_id]);
+        $total_approved = $stmt->fetchColumn();
+        
+        if ($total_approved > 0) {
+            $stmt = $pdo->prepare("
+                UPDATE budget_request 
+                SET approved_budget = ? 
+                WHERE request_id = ?
+            ");
+            $stmt->execute([$total_approved, $request_id]);
+        }
     }
     
     // Process the approval through workflow

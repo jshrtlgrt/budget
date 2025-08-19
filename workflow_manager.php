@@ -258,16 +258,79 @@ class WorkflowManager {
         return $levels;
     }
     
+    /**
+     * Resume workflow after requester provides additional information
+     */
+    public function resumeWorkflowAfterInfoProvided($request_id, $requesting_approval_level) {
+        try {
+            // Reset the requesting level to pending
+            $stmt = $this->pdo->prepare("
+                UPDATE approval_progress 
+                SET status = 'pending', comments = NULL, timestamp = NULL 
+                WHERE request_id = ? AND approval_level = ?
+            ");
+            $stmt->execute([$request_id, $requesting_approval_level]);
+            
+            // Reset higher levels to waiting
+            $stmt = $this->pdo->prepare("
+                UPDATE approval_progress 
+                SET status = 'waiting', comments = NULL, timestamp = NULL 
+                WHERE request_id = ? AND approval_level > ?
+            ");
+            $stmt->execute([$request_id, $requesting_approval_level]);
+            
+            // Update the main request status
+            $stmt = $this->pdo->prepare("
+                UPDATE budget_request 
+                SET status = 'pending', current_approval_level = ? 
+                WHERE request_id = ?
+            ");
+            $stmt->execute([$requesting_approval_level, $request_id]);
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Workflow resume failed: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Resume workflow after requester provides additional information (with transaction)
+     */
+    public function resumeWorkflowAfterInfoProvidedWithTransaction($request_id, $requesting_approval_level) {
+        try {
+            $this->pdo->beginTransaction();
+            
+            $result = $this->resumeWorkflowAfterInfoProvided($request_id, $requesting_approval_level);
+            
+            if ($result) {
+                $this->pdo->commit();
+            } else {
+                $this->pdo->rollBack();
+            }
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("Workflow resume failed: " . $e->getMessage());
+            return false;
+        }
+    }
+    
     private function getActionText($action, $comments) {
         switch ($action) {
+            case 'approve':
             case 'approved':
                 return 'Approved' . (!empty($comments) ? ': ' . $comments : '');
+            case 'reject':
             case 'rejected':
                 return 'Rejected: ' . $comments;
             case 'request_info':
                 return 'Requested more information: ' . $comments;
             default:
-                return 'Unknown action';
+                return 'Unknown action: ' . $action; // Show what action was received for debugging
         }
     }
 }

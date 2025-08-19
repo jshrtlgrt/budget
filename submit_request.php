@@ -22,9 +22,13 @@ try {
     }
 
     // Get form data
+    $campus = $_POST['campus'];
     $department = $_POST['department'];
     $fund_account = $_POST['fund_account'];
     $fund_name = $_POST['fund_name'];
+    $duration = $_POST['duration'];
+    $budget_title = $_POST['budget_title'];
+    $description = $_POST['description'];
     $entries = json_decode($_POST['budget_entries'], true);
 
     // Calculate total
@@ -49,15 +53,22 @@ try {
 
     $insertRequest = $pdo->prepare("
         INSERT INTO budget_request (
-            request_id, account_id, timestamp, department_code,
+            request_id, account_id, timestamp, department_code, campus_code,
+            fund_account, fund_name, duration, budget_title, description,
             proposed_budget, status, academic_year
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $insertRequest->execute([
         $request_id,
         $account_id,
         $timestamp,
         $department,
+        $campus,
+        $fund_account,
+        $fund_name,
+        $duration,
+        $budget_title,
+        $description,
         $total,
         $status,
         $academic_year
@@ -73,15 +84,16 @@ try {
 $entryInsert = $pdo->prepare("
     INSERT INTO budget_entries (
         request_id, row_num, month_year, gl_code, budget_category_code,
-        budget_description, amount, monthly_upload, manual_adjustment,
+        budget_description, remarks, amount, monthly_upload, manual_adjustment,
         upload_multiplier, fund_type_code, nature_code, fund_account, fund_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
 $rowNum = 1;
 foreach ($entries as $entry) {
     $gl = $entry['gl_code'];
     $desc = $entry['label'];
+    $remarks = $entry['remarks'] ?? '';
     $amt = floatval($entry['amount']);
 
     // For testing purposes
@@ -100,6 +112,7 @@ foreach ($entries as $entry) {
         $gl,
         $budget_category_code,
         $desc,
+        $remarks,
         $amt,
         $monthly_upload,
         $manual_adjustment,
@@ -112,6 +125,67 @@ foreach ($entries as $entry) {
     $rowNum++;
 }
 
+    // Handle file uploads
+    if (isset($_FILES['attachments']) && !empty($_FILES['attachments']['name'][0])) {
+        $uploadDir = 'uploads/';
+        
+        // Ensure upload directory exists
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $attachmentInsert = $pdo->prepare("
+            INSERT INTO attachments (request_id, filename, original_filename, file_size, file_type, uploaded_by)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        
+        foreach ($_FILES['attachments']['name'] as $key => $originalName) {
+            if (!empty($originalName)) {
+                $tmpName = $_FILES['attachments']['tmp_name'][$key];
+                $fileSize = $_FILES['attachments']['size'][$key];
+                $fileType = $_FILES['attachments']['type'][$key];
+                
+                // Generate unique filename to prevent conflicts
+                $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
+                $uniqueFilename = $request_id . '_' . time() . '_' . $key . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $uniqueFilename;
+                
+                // Validate file
+                $maxSize = 10 * 1024 * 1024; // 10MB
+                $allowedTypes = [
+                    'application/pdf', 'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+                    'text/plain', 'text/csv'
+                ];
+                
+                if ($fileSize > $maxSize) {
+                    throw new Exception("File '$originalName' is too large. Maximum size is 10MB.");
+                }
+                
+                if (!in_array($fileType, $allowedTypes)) {
+                    throw new Exception("File '$originalName' type is not allowed.");
+                }
+                
+                // Move uploaded file
+                if (move_uploaded_file($tmpName, $uploadPath)) {
+                    // Save to database
+                    $attachmentInsert->execute([
+                        $request_id,
+                        $uniqueFilename,
+                        $originalName,
+                        $fileSize,
+                        $fileType,
+                        $account_id
+                    ]);
+                } else {
+                    throw new Exception("Failed to upload file: $originalName");
+                }
+            }
+        }
+    }
 
     // Redirect on success
     header("Location: requester.php?submitted=1");
