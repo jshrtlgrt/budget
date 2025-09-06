@@ -3,6 +3,10 @@ session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'requester') {
     header("Location: login.php");
     exit;
+
+    require_once 'auth_check.php';
+requireLogin();
+
 }
 
 $pdo = new PDO("mysql:host=localhost;dbname=budget_database_schema", "root", "");
